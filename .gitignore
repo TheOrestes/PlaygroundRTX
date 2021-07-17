@@ -43,3 +43,5 @@
 *.suo
 bin
 bin-int
+Playground/Assets/
+Playground/ThirdParty/

@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Src\Engine\Helpers\Camera.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\RTXRenderer.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\VulkanRenderer.cpp" />
+    <ClCompile Include="Src\Engine\RenderObjects\HDRISkydome.cpp" />
+    <ClCompile Include="Src\Engine\RenderObjects\DummySkybox.cpp" />
+    <ClCompile Include="Src\Engine\Scene.cpp" />
+    <ClCompile Include="Src\Engine\Helpers\FreeCamera.cpp" />
+    <ClCompile Include="Src\Application.cpp" />
+    <ClCompile Include="Src\Engine\Helpers\Log.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="Src\Engine\RenderObjects\Mesh.cpp" />
+    <ClCompile Include="Src\Engine\RenderObjects\Model.cpp" />
+    <ClCompile Include="Src\Main.cpp" />
+    <ClCompile Include="Src\PlaygroundPCH.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">PlaygroundPCH.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PlaygroundPCH.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="Src\Engine\Renderer\VulkanDevice.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\VulkanSwapChain.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\DeferredFrameBuffer.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\VulkanTexture2D.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\VulkanGraphicsPipeline.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\VulkanMaterial.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\imgui.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Src\Engine\ImGui\UIManager.cpp" />
+    <ClCompile Include="Src\Engine\Renderer\VulkanFrameBuffer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Src\Engine\Helpers\Camera.h" />
+    <ClInclude Include="Src\Engine\Renderer\RTXRenderer.h" />
+    <ClInclude Include="Src\Engine\RenderObjects\HDRISkydome.h" />
+    <ClInclude Include="Src\Engine\RenderObjects\DummySkybox.h" />
+    <ClInclude Include="Src\Engine\Scene.h" />
+    <ClInclude Include="Src\Engine\Helpers\FreeCamera.h" />
+    <ClInclude Include="Src\Application.h" />
+    <ClInclude Include="Src\Engine\Helpers\Log.h" />
+    <ClInclude Include="Src\Engine\Helpers\Utility.h" />
+    <ClInclude Include="Src\Engine\ImGui\imconfig.h" />
+    <ClInclude Include="Src\Engine\ImGui\imgui.h" />
+    <ClInclude Include="Src\Engine\ImGui\imgui_impl_glfw.h" />
+    <ClInclude Include="Src\Engine\ImGui\imgui_impl_vulkan.h" />
+    <ClInclude Include="Src\Engine\ImGui\imgui_internal.h" />
+    <ClInclude Include="Src\Engine\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="Src\Engine\ImGui\imstb_textedit.h" />
+    <ClInclude Include="Src\Engine\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Src\Engine\Renderer\IRenderer.h" />
+    <ClInclude Include="Src\Engine\Renderer\VulkanRenderer.h" />
+    <ClInclude Include="Src\Engine\RenderObjects\Mesh.h" />
+    <ClInclude Include="Src\Engine\RenderObjects\Model.h" />
+    <ClInclude Include="Src\PlaygroundHeaders.h" />
+    <ClInclude Include="Src\PlaygroundPCH.h" />
+    <ClInclude Include="Src\Engine\Renderer\VulkanDevice.h" />
+    <ClInclude Include="Src\Engine\Renderer\VulkanSwapChain.h" />
+    <ClInclude Include="Src\Engine\Renderer\DeferredFrameBuffer.h" />
+    <ClInclude Include="Src\Engine\Renderer\VulkanTexture2D.h" />
+    <ClInclude Include="Src\Engine\Renderer\VulkanGraphicsPipeline.h" />
+    <ClInclude Include="Src\Engine\Renderer\VulkanMaterial.h" />
+    <ClInclude Include="Src\Engine\ImGui\UIManager.h" />
+    <ClInclude Include="Src\Engine\Renderer\VulkanFrameBuffer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\BrdfLUT.frag" />
+    <None Include="Shaders\BrdfLUT.vert" />
+    <None Include="Shaders\HDRI2Cube.frag" />
+    <None Include="Shaders\HDRI2Cube.vert" />
+    <None Include="Shaders\HDRISkydome.frag" />
+    <None Include="Shaders\HDRISkydome.vert" />
+    <None Include="Shaders\PreFilterCube.frag" />
+    <None Include="Shaders\PreFilterCube.vert" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{e068b211-6598-4b0e-91c6-fd6f3ca1e2ee}</ProjectGuid>
+    <RootNamespace>Playground</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Configuration)-$(Platform)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)-$(Platform)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Configuration)-$(Platform)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)-$(Platform)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)Playground\ThirdParty\spdlog\include;$(SolutionDir)Playground\ThirdParty\glfw\include;$(SolutionDir)Playground\ThirdParty\glm;$(SolutionDir)Playground\ThirdParty\assimp\include;$(SolutionDir)Playground\ThirdParty\stb;$(SolutionDir)Playground\ThirdParty\KTX-Software\lib;$(SolutionDir)Playground\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>PlaygroundPCH.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>c:\VulkanSDK\1.2.170.0\Lib;$(SolutionDir)Playground\ThirdParty\glfw\build\src\Debug;$(SolutionDir)Playground\ThirdParty\assimp\build\lib\Debug;$(SolutionDir)Playground\ThirdParty\assimp\build\contrib\zlib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc142-mtd.lib;zlibstaticd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>xcopy $(ProjectDir)Assets $(OutDir)Assets /e /y /i /r
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.2.170.0\Include;$(SolutionDir)Playground\ThirdParty\spdlog\include;$(SolutionDir)Playground\ThirdParty\glfw\include;$(SolutionDir)Playground\ThirdParty\glm;$(SolutionDir)Playground\ThirdParty\assimp\include;$(SolutionDir)Playground\ThirdParty\stb;$(SolutionDir)Playground\ThirdParty\KTX-Software\other_include;$(SolutionDir)Playground\Src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>PlaygroundPCH.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>c:\VulkanSDK\1.2.162.1\Lib;$(SolutionDir)Playground\ThirdParty\glfw\build\src\Release;$(SolutionDir)Playground\ThirdParty\assimp\build\lib\Release;$(SolutionDir)Playground\ThirdParty\assimp\build\contrib\zlib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;assimp-vc142-mt.lib;zlibstatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
