@@ -31,11 +31,21 @@ public:
     virtual void					HandleWindowResize() override;
     virtual void					CleanupOnWindowResize() override;
 
+    // RTX
+    void							InitRayTracing();
+    void							CreateBottomLevelAS();
+    void							CreateTopLevelAS();
+    void							CreateRayTracingDescriptorSet();
+    void							CreateRayTracingGraphicsPipeline();
+    void							CreateRayTracingBindingTable();
+
 private:
 
     VkDeviceSize                    m_vkBufferSize;
     VkBuffer                        m_vkBufferImage;
     VkDeviceMemory                  m_vkDeviceMemoryImage;
-    
+
+    // RTX
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR m_vkRayTracingPipelineProperties;
 };
 

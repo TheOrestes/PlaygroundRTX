@@ -36,32 +36,35 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
         m_pDevice->CreateGraphicsCommandPool();
         m_pDevice->CreateGraphicsCommandBuffers(m_pSwapChain->m_vecSwapchainImages.size());
 
+        InitRayTracing();
+
         // Create a buffer
-        m_vkBufferSize = m_pSwapChain->m_vkSwapchainExtent.width * m_pSwapChain->m_vkSwapchainExtent.height * 3 * sizeof(float);
-        m_pDevice->CreateBuffer(m_vkBufferSize, 
-                                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
-                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-                                &m_vkBufferImage,
-                                &m_vkDeviceMemoryImage);
-
-        RecordCommands(0);
-
-        // Get the image data back from the GPU
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingMemory;
-
-        // copy image data to staging buffer
-        void* data;
-        vkMapMemory(m_pDevice->m_vkLogicalDevice, m_vkDeviceMemoryImage, 0, m_vkBufferSize, 0, (void**)&data);
-
-        //float* fData = reinterpret_cast<float*>(data);
-        stbi_write_hdr("out.hdr", 
-                        m_pSwapChain->m_vkSwapchainExtent.width, 
-                        m_pSwapChain->m_vkSwapchainExtent.height, 
-                        3, reinterpret_cast<float*>(data));
-
-        //memcpy(reinterpret_cast<float*>(data), m_vkBufferImage, m_vkBufferSize);
-        vkUnmapMemory(m_pDevice->m_vkLogicalDevice, m_vkDeviceMemoryImage);
+        // m_vkBufferSize = m_pSwapChain->m_vkSwapchainExtent.width * m_pSwapChain->m_vkSwapchainExtent.height * 3 * sizeof(float);
+        
+        // m_pDevice->CreateBuffer(m_vkBufferSize, 
+        //                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
+        //                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
+        //                         &m_vkBufferImage,
+        //                         &m_vkDeviceMemoryImage);
+        // 
+        // RecordCommands(0);
+        // 
+        // // Get the image data back from the GPU
+        // VkBuffer stagingBuffer;
+        // VkDeviceMemory stagingMemory;
+        // 
+        // // copy image data to staging buffer
+        // void* data;
+        // vkMapMemory(m_pDevice->m_vkLogicalDevice, m_vkDeviceMemoryImage, 0, m_vkBufferSize, 0, (void**)&data);
+        // 
+        // //float* fData = reinterpret_cast<float*>(data);
+        // stbi_write_hdr("out.hdr", 
+        //                 m_pSwapChain->m_vkSwapchainExtent.width, 
+        //                 m_pSwapChain->m_vkSwapchainExtent.height, 
+        //                 3, reinterpret_cast<float*>(data));
+        // 
+        // //memcpy(reinterpret_cast<float*>(data), m_vkBufferImage, m_vkBufferSize);
+        // vkUnmapMemory(m_pDevice->m_vkLogicalDevice, m_vkDeviceMemoryImage);
     }
     catch (const std::runtime_error& e)
     {
@@ -139,5 +142,44 @@ void RTXRenderer::HandleWindowResize()
 void RTXRenderer::CleanupOnWindowResize()
 {
     VulkanRenderer::CleanupOnWindowResize();
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void RTXRenderer::InitRayTracing()
+{
+    m_vkRayTracingPipelineProperties = {};
+    m_vkRayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+    // Requesting ray tracing properties
+    VkPhysicalDeviceProperties2 prop2 = {};
+    prop2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    prop2.pNext = &m_vkRayTracingPipelineProperties;
+
+    vkGetPhysicalDeviceProperties2(m_pDevice->m_vkPhysicalDevice, &prop2);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void RTXRenderer::CreateBottomLevelAS()
+{
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void RTXRenderer::CreateTopLevelAS()
+{
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void RTXRenderer::CreateRayTracingDescriptorSet()
+{
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void RTXRenderer::CreateRayTracingGraphicsPipeline()
+{
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void RTXRenderer::CreateRayTracingBindingTable()
+{
 }
 
