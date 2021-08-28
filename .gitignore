@@ -43,5 +43,6 @@
 *.suo
 bin
 bin-int
-Playground/Assets/
+Playground/Assets/Models
+Playground/Assets/Textures
 Playground/ThirdParty/
