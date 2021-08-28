@@ -40,7 +40,12 @@ public:
 
 	void								CreateBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, 
 													 VkMemoryPropertyFlags bufferProperties, VkBuffer* outBuffer, 
-													 VkDeviceMemory* outBufferMemory);
+													 VkDeviceMemory* outBufferMemory, const std::string& debugName = "");
+
+	void								CreateBufferAndCopyData(VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, 
+																VkMemoryPropertyFlags bufferProperties, VkBuffer* outBuffer, 
+																VkDeviceMemory* outBufferMemory, void* data, const std::string& debugName = "");
+	
 
 	VkCommandBuffer						BeginCommandBuffer();
 	void								EndAndSubmitCommandBuffer(VkCommandBuffer commandBuffer);

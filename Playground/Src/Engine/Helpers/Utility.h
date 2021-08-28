@@ -148,6 +148,105 @@ namespace Helper
 		};
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//--- Create Shader Module
+		inline VkShaderModule CreateShaderModule(VulkanDevice* pDevice, const std::string& fileName)
+		{
+			// start reading at the end & in binary mode.
+			// Advantage of reading file from the end is we can use read position to determine
+			// size of the file & allocate buffer accordingly!
+			std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+
+			if (!file.is_open())
+				LOG_ERROR("Failed to open Shader file!");
+
+			// get the file size & allocate buffer memory!
+			size_t fileSize = (size_t)file.tellg();
+			std::vector<char> buffer(fileSize);
+
+			// now seek back to the beginning of the file & read all bytes at once!
+			file.seekg(0);
+			file.read(buffer.data(), fileSize);
+
+			// close the file!
+			file.close();
+
+			// Create Shader Module
+			VkShaderModuleCreateInfo shaderModuleInfo;
+			shaderModuleInfo.codeSize = buffer.size();
+			shaderModuleInfo.flags = 0;
+			shaderModuleInfo.pCode = reinterpret_cast<const uint32_t*>(buffer.data());
+			shaderModuleInfo.pNext = nullptr;
+			shaderModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
+			VkShaderModule shaderModule;
+			std::string shaderModuleName = fileName;
+
+			VKRESULT_CHECK_INFO(vkCreateShaderModule(pDevice->m_vkLogicalDevice, &shaderModuleInfo, nullptr, &shaderModule),
+								"Failed to create shader module for " + shaderModuleName,
+								"Successfully created shader module for " + shaderModuleName);
+
+			return shaderModule;
+		}
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		inline void SetDebugUtilsObjectName(VkDevice pDevice, VkObjectType objType, uint64_t objHandle, const std::string& objName)
+		{
+			PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT = 
+			reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(vkGetDeviceProcAddr(pDevice, "vkSetDebugUtilsObjectNameEXT"));
+
+			// This is for debugging purpose only, using debugutils extension allows us to have debug name
+			// during validation layer error reporting!
+			VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+			nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+			nameInfo.objectType = objType;
+			nameInfo.objectHandle = (uint64_t)objHandle;
+			nameInfo.pObjectName = objName.c_str();
+
+			vkSetDebugUtilsObjectNameEXT(pDevice, &nameInfo);
+		}
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		inline uint32_t alignedSize(uint32_t value, uint32_t alignment)
+		{
+			return (value + alignment - 1) & ~(alignment - 1);
+		}
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//--- Generic get buffer device address
+		inline VkDeviceAddress GetBufferDeviceAddress(VulkanDevice* pDevice, VkBuffer buffer)
+		{
+			VkBufferDeviceAddressInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+			info.buffer = buffer;
+
+			return vkGetBufferDeviceAddress(pDevice->m_vkLogicalDevice, &info);
+		}
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		inline VkFormat ChooseSupportedFormats(VulkanDevice* pDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags)
+		{
+			// Loop through options & find the compatible one
+			for (VkFormat format : formats)
+			{
+				// Get properties for given formats on this device
+				VkFormatProperties properties;
+				vkGetPhysicalDeviceFormatProperties(pDevice->m_vkPhysicalDevice, format, &properties);
+
+				// depending on tiling choice, need to check for different bit flag
+				if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
+				{
+					return format;
+				}
+				else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags)
+				{
+					return format;
+				}
+
+				LOG_ERROR("Failed to find matching format!");
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//--- Generic Copy Image buffer from srcBuffer to VkImage using transferQueue & transferCommandPool of specific width-height!
 		inline void CopyImageBuffer(VulkanDevice* pDevice, VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height)
 		{
@@ -885,15 +984,7 @@ namespace Helper
 			if (vkCreateImage(pDevice->m_vkLogicalDevice, &imageCreateInfo, nullptr, &image) != VK_SUCCESS)
 				LOG_ERROR("Failed to create an image");
 
-			// This is for debugging purpose only, using debugutils extension allows us to have debug name
-			// during validation layer error reporting!
-			//VkDebugUtilsObjectNameInfoEXT nameInfo = {};
-			//nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-			//nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
-			//nameInfo.objectHandle = (uint64_t)image;
-			//nameInfo.pObjectName = debugName.c_str();
-			//
-			//vkSetDebugUtilsObjectNameEXT(pDevice->m_vkLogicalDevice, &nameInfo);
+			//SetDebugUtilsObjectName(pDevice, VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(image), "ImageVulkan");
 
 			// Get memory requirements for type of image
 			VkMemoryRequirements memoryRequirements;

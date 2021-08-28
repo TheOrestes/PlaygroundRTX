@@ -89,6 +89,7 @@ void Scene::LoadModels(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain)
 	pWoodenFloor->SetPosition(glm::vec3(0, -2, 0));
 	pWoodenFloor->SetScale(glm::vec3(4));
 	pWoodenFloor->SetupDescriptors(pDevice, pSwapchain);
+	pWoodenFloor->CreateBottomLevelAS(pDevice);
 	
 	m_vecModels.push_back(pWoodenFloor);
 }

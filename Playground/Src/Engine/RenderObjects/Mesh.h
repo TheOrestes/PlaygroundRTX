@@ -11,26 +11,33 @@
 
 class VulkanDevice;
 
+//---------------------------------------------------------------------------------------------------------------------
 struct PushConstantData
 {
 	glm::mat4 matModel;
 };
 
+//---------------------------------------------------------------------------------------------------------------------
+struct BottomLevelASInput
+{
+	BottomLevelASInput()
+	{
+		m_vkAccelStructGeometry = {};
+		m_vkAccelStructBuildOffset = {};
+	}
+
+	VkAccelerationStructureGeometryKHR m_vkAccelStructGeometry;
+	VkAccelerationStructureBuildRangeInfoKHR m_vkAccelStructBuildOffset;
+};
+
+//---------------------------------------------------------------------------------------------------------------------
 class Mesh
 {
 public:
 	Mesh() {};
-	Mesh(VulkanDevice* device,
-		const std::vector<Helper::App::VertexPNTBT>& vertices,
-		const std::vector<uint32_t>& indices);
-
-	Mesh(VulkanDevice* device,
-		const std::vector<Helper::App::VertexPNT>& vertices,
-		const std::vector<uint32_t>& indices);
-
-	Mesh(VulkanDevice* device,
-		const std::vector<Helper::App::VertexP>& vertices,
-		const std::vector<uint32_t>& indices);
+	Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexPNTBT>& vertices, const std::vector<uint32_t>& indices);
+	Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexPNT>& vertices, const std::vector<uint32_t>& indices);
+	Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexP>& vertices, const std::vector<uint32_t>& indices);
 
 	void						SetPushConstantData(glm::mat4 modelMatrix);
 	//inline PushConstantData		GetPushConstantData() { return m_pushConstData; }
@@ -46,12 +53,16 @@ public:
 	void						Cleanup(VulkanDevice* pDevice);
 	void						CleanupOnWindowsResize(VulkanDevice* pDevice);
 
+	void						MeshToVkGeometryKHR(VulkanDevice* pDevice);
+
 public:
 	uint32_t					m_uiVertexCount;
 	uint32_t					m_uiIndexCount;
 
 	VkBuffer					m_vkVertexBuffer;
 	VkBuffer					m_vkIndexBuffer;
+
+	BottomLevelASInput*			m_pBottomLevelASInput;
 
 private:
 	//PushConstantData			m_pushConstData;

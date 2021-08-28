@@ -211,7 +211,7 @@ void VulkanDevice::CreateLogicalDevice()
 
 	// Request GPU features related to ray tracing!
 	VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures = {};
-	bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_ADDRESS_FEATURES_EXT;
+	bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
 	bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
 	bufferDeviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_FALSE;
 	bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_FALSE;
@@ -332,7 +332,7 @@ uint32_t VulkanDevice::FindMemoryTypeIndex(uint32_t allowedTypeIndex, VkMemoryPr
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //--- Create VkBuffer & VkDeviceMemory of specific size, based on usage flags & property flags. 
 void VulkanDevice::CreateBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, VkMemoryPropertyFlags bufferProperties, 
-								VkBuffer* outBuffer, VkDeviceMemory* outBufferMemory)
+								VkBuffer* outBuffer, VkDeviceMemory* outBufferMemory, const std::string& debugName)
 {
 
 	// Information to create a buffer (doesn't include assigning memory)
@@ -345,6 +345,8 @@ void VulkanDevice::CreateBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags buff
 	if (vkCreateBuffer(m_vkLogicalDevice, &bufferInfo, nullptr, outBuffer) != VK_SUCCESS)
 		LOG_ERROR("Failed to create Vertex Buffer");
 
+	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(*outBuffer), (debugName + "_buffer"));
+
 	// GET BUFFER MEMORY REQUIREMENTS
 	VkMemoryRequirements	memRequirements;
 	vkGetBufferMemoryRequirements(m_vkLogicalDevice, *outBuffer, &memRequirements);
@@ -355,9 +357,76 @@ void VulkanDevice::CreateBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags buff
 	memoryAllocInfo.allocationSize = memRequirements.size;
 	memoryAllocInfo.memoryTypeIndex = FindMemoryTypeIndex(memRequirements.memoryTypeBits, bufferProperties); // Index of memory type on Physical Device that has required bit flags
 
+	// If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also need to enable the appropriate flag during allocation
+	VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+	if (bufferUsageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
+	{
+		allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
+		allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+		memoryAllocInfo.pNext = &allocFlagsInfo;
+	}
+
 	// Allocated memory to VkDeviceMemory
 	if (vkAllocateMemory(m_vkLogicalDevice, &memoryAllocInfo, nullptr, outBufferMemory) != VK_SUCCESS)
 		LOG_ERROR("Failed to allocated Vertex Buffer Memory!");
+
+	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(*outBufferMemory), (debugName + "_deviceMemory"));
+
+	// Allocate memory to given Vertex buffer
+	vkBindBufferMemory(m_vkLogicalDevice, *outBuffer, *outBufferMemory, 0);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//--- Create VkBuffer & VkDeviceMemory of specific size, based on usage flags & property flags. 
+void VulkanDevice::CreateBufferAndCopyData(VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsageFlags, VkMemoryPropertyFlags bufferProperties,
+										   VkBuffer* outBuffer, VkDeviceMemory* outBufferMemory, void* inData, const std::string& debugName)
+{
+
+	// Information to create a buffer (doesn't include assigning memory)
+	VkBufferCreateInfo bufferInfo = {};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = bufferSize;													// total size of buffer
+	bufferInfo.usage = bufferUsageFlags;											// type of buffer
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;								// similar to swap chain images, can share vertex buffers
+
+	if (vkCreateBuffer(m_vkLogicalDevice, &bufferInfo, nullptr, outBuffer) != VK_SUCCESS)
+		LOG_ERROR("Failed to create Vertex Buffer");
+
+	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(*outBuffer), (debugName + "_buffer"));
+
+	// GET BUFFER MEMORY REQUIREMENTS
+	VkMemoryRequirements	memRequirements;
+	vkGetBufferMemoryRequirements(m_vkLogicalDevice, *outBuffer, &memRequirements);
+
+	// ALLOCATE MEMORY TO BUFFER
+	VkMemoryAllocateInfo memoryAllocInfo = {};
+	memoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	memoryAllocInfo.allocationSize = memRequirements.size;
+	memoryAllocInfo.memoryTypeIndex = FindMemoryTypeIndex(memRequirements.memoryTypeBits, bufferProperties); // Index of memory type on Physical Device that has required bit flags
+
+	// If the buffer has VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT set we also need to enable the appropriate flag during allocation
+	VkMemoryAllocateFlagsInfoKHR allocFlagsInfo{};
+	if (bufferUsageFlags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) 
+	{
+		allocFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO_KHR;
+		allocFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+		memoryAllocInfo.pNext = &allocFlagsInfo;
+	}
+
+	// Allocated memory to VkDeviceMemory
+	if (vkAllocateMemory(m_vkLogicalDevice, &memoryAllocInfo, nullptr, outBufferMemory) != VK_SUCCESS)
+		LOG_ERROR("Failed to allocated Vertex Buffer Memory!");
+
+	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(*outBufferMemory), (debugName + "_deviceMemory"));
+
+	// If a pointer to the buffer data has been passed, map the buffer & copy over the data!
+	if (inData != nullptr)
+	{
+		void* data;
+		VKRESULT_CHECK(vkMapMemory(m_vkLogicalDevice, *outBufferMemory, 0, bufferSize, 0, &data));
+		memcpy(data, inData, bufferSize);											
+		vkUnmapMemory(m_vkLogicalDevice, *outBufferMemory);								
+	}
 
 	// Allocate memory to given Vertex buffer
 	vkBindBufferMemory(m_vkLogicalDevice, *outBuffer, *outBufferMemory, 0);

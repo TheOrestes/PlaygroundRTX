@@ -36,6 +36,8 @@ public:
 	virtual void					Render() override;
 	virtual void					Cleanup() override;
 
+	virtual void					BeginFrame();
+	virtual void					SubmitAndPresentFrame();
 	virtual void					RecordCommands(uint32_t currentImage);
 	virtual void					CreateSyncObjects();
 
@@ -65,6 +67,7 @@ protected:
 	std::vector<VkSemaphore>		m_vecSemaphoreRenderFinished;
 	std::vector<VkFence>			m_vecFencesRender;
 	uint32_t						m_uiCurrentFrame;
+	uint32_t						m_uiSwapchainImageIndex;
 
 	bool							m_bFramebufferResized;
 

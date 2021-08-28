@@ -312,6 +312,16 @@ Mesh Model::LoadMesh(VulkanDevice* pDevice, aiMesh* mesh, const aiScene* scene)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
+void Model::CreateBottomLevelAS(VulkanDevice* pDevice)
+{
+	std::vector<Mesh>::iterator iter = m_vecMeshes.begin();
+	for (; iter != m_vecMeshes.end(); ++iter)
+	{
+		(*iter).MeshToVkGeometryKHR(pDevice);
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
 void Model::Update(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain, float dt)
 {
 	// Update angle
@@ -330,9 +340,9 @@ void Model::Update(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain, float dt)
 	m_pShaderUniforms->shaderData.model = glm::scale(m_pShaderUniforms->shaderData.model, m_vecScale);
 
 	// Fetch View & Projection matrices from the Camera!	
-	m_pShaderUniforms->shaderData.projection = Camera::getInstance().m_matProjection;
-
 	m_pShaderUniforms->shaderData.view = Camera::getInstance().m_matView;
+
+	m_pShaderUniforms->shaderData.projection = Camera::getInstance().m_matProjection;	
 	m_pShaderUniforms->shaderData.projection[1][1] *= -1.0f;
 
 	// Update object ID

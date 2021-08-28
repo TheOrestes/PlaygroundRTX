@@ -37,7 +37,7 @@ void VulkanFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChain*
     m_vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());	
 
     std::vector<VkFormat> formats = { pSwapChain->m_vkSwapchainImageFormat };//{ VK_FORMAT_R8G8B8A8_UNORM };
-    m_attachmentFormat = ChooseSupportedFormats(pDevice, formats, 
+    m_attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, 
                                                 VK_IMAGE_TILING_OPTIMAL, 
                                                 VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
@@ -126,29 +126,5 @@ void VulkanFrameBuffer::CleanupOnWindowResize(VulkanDevice* pDevice)
     for (uint16_t i = 0; i < m_vecFramebuffer.size(); ++i)
     {
         vkDestroyFramebuffer(pDevice->m_vkLogicalDevice, m_vecFramebuffer[i], nullptr);
-    }
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-VkFormat VulkanFrameBuffer::ChooseSupportedFormats(VulkanDevice* pDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags)
-{
-    // Loop through options & find the compatible one
-    for (VkFormat format : formats)
-    {
-        // Get properties for given formats on this device
-        VkFormatProperties properties;
-        vkGetPhysicalDeviceFormatProperties(pDevice->m_vkPhysicalDevice, format, &properties);
-
-        // depending on tiling choice, need to check for different bit flag
-        if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
-        {
-            return format;
-        }
-        else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags)
-        {
-            return format;
-        }
-
-        LOG_ERROR("Failed to find matching format!");
     }
 }

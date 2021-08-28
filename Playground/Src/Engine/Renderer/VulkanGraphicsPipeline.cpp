@@ -50,43 +50,6 @@ void VulkanGraphicsPipeline::CreatePipelineLayout(VulkanDevice* pDevice, const s
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-VkShaderModule VulkanGraphicsPipeline::CreateShaderModule(VulkanDevice* pDevice, const std::string& fileName)
-{
-	// start reading at the end & in binary mode.
-	// Advantage of reading file from the end is we can use read position to determine
-	// size of the file & allocate buffer accordingly!
-	std::ifstream file(fileName, std::ios::ate | std::ios::binary);
-
-	if (!file.is_open())
-		LOG_ERROR("Failed to open Shader file!");
-
-	// get the file size & allocate buffer memory!
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	// now seek back to the beginning of the file & read all bytes at once!
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-
-	// close the file!
-	file.close();
-
-	// Create Shader Module
-	VkShaderModuleCreateInfo shaderModuleInfo;
-	shaderModuleInfo.codeSize = buffer.size();
-	shaderModuleInfo.flags = 0;
-	shaderModuleInfo.pCode = reinterpret_cast<const uint32_t*>(buffer.data());
-	shaderModuleInfo.pNext = nullptr;
-	shaderModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(pDevice->m_vkLogicalDevice, &shaderModuleInfo, nullptr, &shaderModule) != VK_SUCCESS)
-		LOG_ERROR("Failed to create shader module!");
-
-	return shaderModule;
-}
-
-//---------------------------------------------------------------------------------------------------------------------
 void VulkanGraphicsPipeline::CreateDefaultPipelineConfigInfo(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain, 
 															 VkRenderPass renderPass, uint32_t subPass, VkPipelineLayout layout, 
 															 PipelineConfigInfo& outInfo)
@@ -206,8 +169,8 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 				m_strVertexShader = "Assets/Shaders/GBuffer.vert.spv";
 				m_strFragmentShader = "Assets/Shaders/GBuffer.frag.spv";
 
-				vertShaderModule = CreateShaderModule(pDevice, m_strVertexShader);
-				fragShaderModule = CreateShaderModule(pDevice, m_strFragmentShader);
+				vertShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
+				fragShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
 
 				//--- How the data for the single vertex (including info such as Position, color, texcoords etc.) is as a whole
 				VkVertexInputBindingDescription bindingDescription = {};
@@ -301,8 +264,8 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 			m_strVertexShader = "Assets/Shaders/HDRISkydome.vert.spv";
 			m_strFragmentShader = "Assets/Shaders/HDRISkydome.frag.spv";
 
-			vertShaderModule = CreateShaderModule(pDevice, m_strVertexShader);
-			fragShaderModule = CreateShaderModule(pDevice, m_strFragmentShader);
+			vertShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
+			fragShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
 
 			//--- How the data for the single vertex (including info such as Position, color, texcoords etc.) is as a whole
 			VkVertexInputBindingDescription bindingDescription = {};
@@ -382,8 +345,8 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 			m_strVertexShader = "Assets/Shaders/Deferred.vert.spv";
 			m_strFragmentShader = "Assets/Shaders/Deferred.frag.spv";
 
-			vertShaderModule = CreateShaderModule(pDevice, m_strVertexShader);
-			fragShaderModule = CreateShaderModule(pDevice, m_strFragmentShader);
+			vertShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
+			fragShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
 
 			// No vertex data for Final beauty 
 			vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

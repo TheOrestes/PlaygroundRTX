@@ -58,9 +58,6 @@ public:
 	void								CleanupOnWindowResize(VulkanDevice* pDevice);
 
 private:
-	VkFormat							ChooseSupportedFormats(VulkanDevice* pDevice, const std::vector<VkFormat>& formats,
-																VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
-
 	std::vector<VkImageView>			m_vecAttachments;
 
 public:

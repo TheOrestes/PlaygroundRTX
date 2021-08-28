@@ -48,7 +48,6 @@ public:
 	VkPipelineLayout									m_vkPipelineLayout;
 														
 private:												
-	VkShaderModule										CreateShaderModule(VulkanDevice* pDevice, const std::string& fileName);
 	void												CreateDefaultPipelineConfigInfo(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain, 
 																						VkRenderPass renderPass, uint32_t subPass, VkPipelineLayout layout,
 																						PipelineConfigInfo& outInfo);

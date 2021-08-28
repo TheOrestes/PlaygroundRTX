@@ -90,6 +90,8 @@ public:
 	void								Cleanup(VulkanDevice* pDevice);
 	void								CleanupOnWindowResize(VulkanDevice* pDevice);
 
+	void								CreateBottomLevelAS(VulkanDevice* pDevice);
+
 	// --- SETTERS!
 	inline void							SetPosition(const glm::vec3& _pos)		{ m_vecPosition = _pos; }
 	inline void							SetRotationAxis(const glm::vec3& _axis) { m_vecRotationAxis = _axis; }

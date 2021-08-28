@@ -24,10 +24,5 @@ public:
 	std::vector<VkImageView>		m_vecAttachmentImageView;				// Size equals to number of swapchain images!
 	std::vector<VkDeviceMemory>		m_vecAttachmentImageMemory;				// Size equals to number of swapchain images!
 	std::vector<VkFramebuffer>		m_vecFramebuffer;						// Size equals to number of swapchain images!
-
-private:
-
-	VkFormat						ChooseSupportedFormats(	VulkanDevice* pDevice, const std::vector<VkFormat>& formats,
-															VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
 };
 

@@ -52,7 +52,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pAlbedoAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pAlbedoAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pAlbedoAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
@@ -88,7 +88,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pPositionAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pPositionAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pPositionAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
@@ -124,7 +124,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pNormalAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pNormalAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pNormalAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
@@ -159,7 +159,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pDepthAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT };
-			m_pDepthAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+			m_pDepthAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
@@ -192,7 +192,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pPBRAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pPBRAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pPBRAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
@@ -227,7 +227,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pEmissionAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pEmissionAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pEmissionAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
@@ -261,7 +261,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pBackgroundAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pBackgroundAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pBackgroundAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
@@ -295,7 +295,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pObjectIDAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pObjectIDAttachment->attachmentFormat = ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pObjectIDAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
@@ -322,31 +322,6 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 	}
 	
 }
-
-//---------------------------------------------------------------------------------------------------------------------
-VkFormat DeferredFrameBuffer::ChooseSupportedFormats(VulkanDevice* pDevice, const std::vector<VkFormat>& formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags)
-{
-	// Loop through options & find the compatible one
-	for (VkFormat format : formats)
-	{
-		// Get properties for given formats on this device
-		VkFormatProperties properties;
-		vkGetPhysicalDeviceFormatProperties(pDevice->m_vkPhysicalDevice, format, &properties);
-
-		// depending on tiling choice, need to check for different bit flag
-		if (tiling == VK_IMAGE_TILING_LINEAR && (properties.linearTilingFeatures & featureFlags) == featureFlags)
-		{
-			return format;
-		}
-		else if (tiling == VK_IMAGE_TILING_OPTIMAL && (properties.optimalTilingFeatures & featureFlags) == featureFlags)
-		{
-			return format;
-		}
-
-		LOG_ERROR("Failed to find matching format!");
-	}
-}
-
 
 //---------------------------------------------------------------------------------------------------------------------
 void DeferredFrameBuffer::CreateFrameBuffers(VulkanDevice* pDevice, VulkanSwapChain* pSwapChain, VkRenderPass renderPass)

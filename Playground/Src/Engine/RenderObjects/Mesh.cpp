@@ -6,29 +6,29 @@
 #include "Engine/Renderer/VulkanDevice.h"
 
 //---------------------------------------------------------------------------------------------------------------------
-Mesh::Mesh(VulkanDevice* device,
-	const std::vector<Helper::App::VertexPNTBT>& vertices,
-	const std::vector<uint32_t>& indices)
+Mesh::Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexPNTBT>& vertices, const std::vector<uint32_t>& indices)
 {
 	m_uiVertexCount = vertices.size();
 	m_uiIndexCount = indices.size();
 
 	CreateVertexBuffer(device, vertices);
 	CreateIndexBuffer(device, indices);
+
+	m_pBottomLevelASInput = nullptr;
 
 	//m_pushConstData.matModel = glm::mat4(1.0f);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mesh::Mesh(VulkanDevice* device,
-	const std::vector<Helper::App::VertexPNT>& vertices,
-	const std::vector<uint32_t>& indices)
+Mesh::Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexPNT>& vertices, const std::vector<uint32_t>& indices)
 {
 	m_uiVertexCount = vertices.size();
 	m_uiIndexCount = indices.size();
 
 	CreateVertexBuffer(device, vertices);
 	CreateIndexBuffer(device, indices);
+
+	m_pBottomLevelASInput = nullptr;
 
 	//m_pushConstData.matModel = glm::mat4(1.0f);
 }
@@ -42,6 +42,7 @@ void Mesh::SetPushConstantData(glm::mat4 modelMatrix)
 //---------------------------------------------------------------------------------------------------------------------
 Mesh::~Mesh()
 {
+	SAFE_DELETE(m_pBottomLevelASInput);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -172,6 +173,45 @@ void Mesh::CreateIndexBuffer(VulkanDevice* pDevice, const std::vector<uint32_t>&
 	// Clean up staging buffers
 	vkDestroyBuffer(pDevice->m_vkLogicalDevice, stagingBuffer, nullptr);
 	vkFreeMemory(pDevice->m_vkLogicalDevice, stagingBufferMemory, nullptr);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void Mesh::MeshToVkGeometryKHR(VulkanDevice* pDevice)
+{
+	// BottomLevelAS requires raw device address!
+	VkDeviceAddress vbAddress = Helper::Vulkan::GetBufferDeviceAddress(pDevice, m_vkVertexBuffer);
+	VkDeviceAddress ibAddress = Helper::Vulkan::GetBufferDeviceAddress(pDevice, m_vkIndexBuffer);
+
+	uint32_t maxPrimitiveCount = m_uiIndexCount / 3;
+
+	// Describe buffer as array of VertexPNTBT
+	VkAccelerationStructureGeometryTrianglesDataKHR trianglesData = {};
+	trianglesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+	trianglesData.vertexFormat = VK_FORMAT_R32G32B32A32_SFLOAT;			 
+	trianglesData.vertexData.deviceAddress = vbAddress;
+	trianglesData.vertexStride = sizeof(Helper::App::VertexPNTBT);
+	trianglesData.indexType = VK_INDEX_TYPE_UINT32;
+	trianglesData.indexData.deviceAddress = ibAddress;
+	trianglesData.maxVertex = m_uiVertexCount;
+
+	// Treat above data as containing Opaque Triangles!
+	VkAccelerationStructureGeometryKHR geomAccelStruct = {};
+	geomAccelStruct.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	geomAccelStruct.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+	geomAccelStruct.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+	geomAccelStruct.geometry.triangles = trianglesData;
+
+	// The entire array will be used to build the BottomLevelAS!
+	VkAccelerationStructureBuildRangeInfoKHR accelStructOffset = {};
+	accelStructOffset.firstVertex = 0;
+	accelStructOffset.primitiveCount = maxPrimitiveCount;
+	accelStructOffset.primitiveOffset = 0;
+	accelStructOffset.transformOffset = 0;
+
+	// Our BottomLevelAS is built from this mesh
+	m_pBottomLevelASInput = new BottomLevelASInput();
+	m_pBottomLevelASInput->m_vkAccelStructGeometry = geomAccelStruct;
+	m_pBottomLevelASInput->m_vkAccelStructBuildOffset = accelStructOffset;
 }
 
 

@@ -14,7 +14,7 @@ VulkanTexture2D::VulkanTexture2D()
 	m_vkTextureImage				=	VK_NULL_HANDLE;
 	m_vkTextureImageView			=	VK_NULL_HANDLE;
 	m_vkTextureImageMemory			=	VK_NULL_HANDLE;
-	m_vkTextureDeviceSize			=	VK_NULL_HANDLE;
+	m_vkTextureDeviceSize			=	0;
 	m_vkTextureSampler				=	VK_NULL_HANDLE;
 }
 

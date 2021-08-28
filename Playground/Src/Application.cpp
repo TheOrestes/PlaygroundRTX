@@ -97,9 +97,9 @@ void Application::MainLoop()
         m_fDelta = currTime - lastTime;
         lastTime = currTime;
 
-        m_pRenderer->Update(m_fDelta);
         Camera::getInstance().Update(m_fDelta);
-
+        m_pRenderer->Update(m_fDelta);
+        
         m_pRenderer->Render();
     }
 }

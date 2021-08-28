@@ -3,6 +3,7 @@
 #include "PlaygroundHeaders.h"
 
 #include "VulkanRenderer.h"
+#include "VulkanSwapChain.h"
 
 //---------------------------------------------------------------------------------------------------------------------
 VulkanRenderer::VulkanRenderer()
@@ -13,6 +14,7 @@ VulkanRenderer::VulkanRenderer()
 	m_pSwapChain						= nullptr;
 	
 	m_uiCurrentFrame					= 0;
+	m_uiSwapchainImageIndex				= 0;
 	m_bFramebufferResized				= false;
 
 	m_vkInstance						= VK_NULL_HANDLE;
@@ -59,6 +61,19 @@ int VulkanRenderer::Initialize(GLFWwindow* pWindow)
 		CreateInstance();
 		SetupDebugMessenger();
 		CreateSurface();
+
+		m_pDevice = new VulkanDevice(m_vkInstance, m_vkSurface);
+
+		m_pDevice->PickPhysicalDevice();
+		m_pDevice->CreateLogicalDevice();
+
+		m_pSwapChain = new VulkanSwapChain();
+		m_pSwapChain->CreateSwapChain(m_pDevice, m_vkSurface, m_pWindow);
+
+		m_pDevice->CreateGraphicsCommandPool();
+		m_pDevice->CreateGraphicsCommandBuffers(m_pSwapChain->m_vecSwapchainImages.size());
+
+		CreateSyncObjects();
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -78,12 +93,14 @@ void VulkanRenderer::Update(float dt)
 //---------------------------------------------------------------------------------------------------------------------
 void VulkanRenderer::RunShaderCompiler(const std::string& directoryPath)
 {
-	std::string shaderCompiler = "C:/VulkanSDK/1.2.170.0/Bin/glslc.exe";
+	std::string shaderCompiler = "C:/VulkanSDK/1.2.182.0/Bin/glslc.exe";
 	for (const auto& entry : std::filesystem::directory_iterator(directoryPath))
 	{
-		if (entry.is_regular_file() && (entry.path().extension().string() == ".vert" || entry.path().extension().string() == ".frag"))
+		if (entry.is_regular_file() && 
+		   (entry.path().extension().string() == ".vert" || entry.path().extension().string() == ".frag") ||
+		    entry.path().extension().string() == ".rchit" || entry.path().extension().string() == ".rmiss"  || entry.path().extension().string() == ".rgen")
 		{
-			std::string cmd = shaderCompiler + " -c" + " " + entry.path().string() + " -o " + entry.path().string() + ".spv";
+			std::string cmd = shaderCompiler + " --target-env=vulkan1.2" + " -c" + " " + entry.path().string() + " -o " + entry.path().string() + ".spv";
 			LOG_DEBUG("Compiling shader " + entry.path().filename().string());
 			std::system(cmd.c_str());
 		}
@@ -289,7 +306,8 @@ void VulkanRenderer::HandleWindowResize()
 	// Recreate...!
 	LOG_DEBUG("Recreating SwapChain Start");
 
-	LOG_DEBUG("Recreating SwapChain End");
+	m_pSwapChain->CreateSwapChain(m_pDevice, m_vkSurface, m_pWindow);
+	m_pDevice->CreateGraphicsCommandBuffers(m_pSwapChain->m_vecSwapchainImages.size());
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -300,6 +318,39 @@ void VulkanRenderer::RecordCommands(uint32_t currentImage)
 //---------------------------------------------------------------------------------------------------------------------
 void VulkanRenderer::CreateSyncObjects()
 {
+	m_vecSemaphoreImageAvailable.resize(Helper::App::MAX_FRAME_DRAWS);
+	m_vecSemaphoreRenderFinished.resize(Helper::App::MAX_FRAME_DRAWS);
+	m_vecFencesRender.resize(Helper::App::MAX_FRAME_DRAWS);
+
+	// Semaphore create information
+	VkSemaphoreCreateInfo semaphoreCreateInfo{};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	semaphoreCreateInfo.flags = 0;
+	semaphoreCreateInfo.pNext = nullptr;
+
+	// Fence create information
+	VkFenceCreateInfo fenceCreateInfo{};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	fenceCreateInfo.pNext = nullptr;
+
+	for (uint32_t i = 0; i < Helper::App::MAX_FRAME_DRAWS; ++i)
+	{
+		// Semaphore Image Available
+		VKRESULT_CHECK_INFO(vkCreateSemaphore(m_pDevice->m_vkLogicalDevice, &semaphoreCreateInfo, nullptr, &m_vecSemaphoreImageAvailable[i]),
+							"Failed to create ImageAvailable Semaphore",
+							"Created ImageAvailable Semaphore");
+
+		// Semaphore Render Finished
+		VKRESULT_CHECK_INFO(vkCreateSemaphore(m_pDevice->m_vkLogicalDevice, &semaphoreCreateInfo, nullptr, &m_vecSemaphoreRenderFinished[i]),
+							"Failed to create RenderFinished Semaphore",
+							"Created RenderFinished Semaphore");
+
+		// Fence
+		VKRESULT_CHECK_INFO(vkCreateFence(m_pDevice->m_vkLogicalDevice, &fenceCreateInfo, nullptr, &m_vecFencesRender[i]),
+							"Failed to create Fence",
+							"Successfully created Fence");
+	}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -324,20 +375,28 @@ void VulkanRenderer::SetupDebugMessenger()
 // 3. Present image to the screen when it has signaled finished rendering!
 void VulkanRenderer::Render()
 {
-	
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void VulkanRenderer::CleanupOnWindowResize()
 {
-	
+	m_pSwapChain->CleanupOnWindowResize(m_pDevice);
+	m_pDevice->CleanupOnWindowResize();
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void VulkanRenderer::Cleanup()
 {
-	// Wait until no action being run on device before destroying! 
-	vkDeviceWaitIdle(m_pDevice->m_vkLogicalDevice);
+	// Destroy semaphores
+	for (uint32_t i = 0; i < Helper::App::MAX_FRAME_DRAWS; ++i)
+	{
+		vkDestroySemaphore(m_pDevice->m_vkLogicalDevice, m_vecSemaphoreImageAvailable[i], nullptr);
+		vkDestroySemaphore(m_pDevice->m_vkLogicalDevice, m_vecSemaphoreRenderFinished[i], nullptr);
+		vkDestroyFence(m_pDevice->m_vkLogicalDevice, m_vecFencesRender[i], nullptr);
+	}
+
+	m_pSwapChain->Cleanup(m_pDevice);
+	m_pDevice->Cleanup();
 
 	if (Helper::Vulkan::g_bEnableValidationLayer)
 	{
@@ -346,4 +405,97 @@ void VulkanRenderer::Cleanup()
 
 	vkDestroySurfaceKHR(m_vkInstance, m_vkSurface, nullptr);
 	vkDestroyInstance(m_vkInstance, nullptr);
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void VulkanRenderer::BeginFrame()
+{
+	//--- 1. Acquire next image from the swap chain!
+	// Wait for given fence to signal (open) from last draw call before continuing...
+	vkWaitForFences(m_pDevice->m_vkLogicalDevice, 1, &m_vecFencesRender[m_uiCurrentFrame], VK_TRUE, UINT64_MAX);
+
+	// Manually reset (close) fence!
+	vkResetFences(m_pDevice->m_vkLogicalDevice, 1, &m_vecFencesRender[m_uiCurrentFrame]);
+
+	// Get index of next image to be drawn to & signal semaphore when ready to be drawn to
+	VkResult result = vkAcquireNextImageKHR(m_pDevice->m_vkLogicalDevice, m_pSwapChain->m_vkSwapchain, UINT64_MAX, m_vecSemaphoreImageAvailable[m_uiCurrentFrame], VK_NULL_HANDLE, &m_uiSwapchainImageIndex);
+
+	// During any event such as window size change etc. we need to check if swap chain recreation is necessary
+	// Vulkan tells us that swap chain in no longer adequate during presentation
+	// VK_ERROR_OUT_OF_DATE_KHR = swap chain has become incompatible with the surface & can no longer be used for rendering. (window resize)
+	// VK_SUBOPTIMAL_KHR = swap chain can be still used to present to the surface but the surface properties are no longer matching!
+
+	// if swap chain is out of date while acquiring the image, then its not possible to present it!
+	// We should recreate the swap chain & try again in the next draw call...
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		HandleWindowResize();
+		return;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	{
+		LOG_ERROR("Failed to acquire swap chain image!");
+		return;
+	}
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void VulkanRenderer::SubmitAndPresentFrame()
+{ 
+	//--- 2. Execute the command buffer
+	// Queue submission & synchronization is configured through VkSubmitInfo.
+
+	VkSemaphore waitSemaphores[] = { m_vecSemaphoreImageAvailable[m_uiCurrentFrame] };
+	VkSemaphore signalSemaphores[] = { m_vecSemaphoreRenderFinished[m_uiCurrentFrame] };
+
+	std::array<VkCommandBuffer, 1> commandBuffers =
+	{
+		m_pDevice->m_vecCommandBufferGraphics[m_uiSwapchainImageIndex]
+		//UIManager::getInstance().m_vecCommandBuffers[imageIndex]
+	};
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 1;														// Number of semaphores to wait on
+	submitInfo.pWaitSemaphores = waitSemaphores;											// List of semaphores to wait on
+
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.pWaitDstStageMask = waitStages;												// stages to check semaphores at
+
+	submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());			// number of command buffers to submit
+	submitInfo.pCommandBuffers = commandBuffers.data();										// command buffers to submit
+	submitInfo.signalSemaphoreCount = 1;													// number of semaphores to signal
+	submitInfo.pSignalSemaphores = signalSemaphores;										// semaphores to signal when command buffer finishes
+	submitInfo.pNext = nullptr;
+
+	if (vkQueueSubmit(m_pDevice->m_vkQueueGraphics, 1, &submitInfo, m_vecFencesRender[m_uiCurrentFrame]) != VK_SUCCESS)
+	{
+		LOG_ERROR("Failed to submit draw command buffer!");
+	}
+
+	//--- 3. Submit result back to the swap chain.
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;														// Number of semaphores to wait on
+	presentInfo.pWaitSemaphores = signalSemaphores;											// semaphores to wait on
+	presentInfo.swapchainCount = 1;															// number of swap chains to present to
+	presentInfo.pSwapchains = &(m_pSwapChain->m_vkSwapchain);								// swapchain to present image to
+	presentInfo.pImageIndices = &m_uiSwapchainImageIndex;									// index of images in swap chains to present
+	presentInfo.pNext = nullptr;
+	presentInfo.pResults = nullptr;
+
+	// check if swap chain is optimal or not! else recreate & try in next draw call!
+	VkResult result = vkQueuePresentKHR(m_pDevice->m_vkQueuePresent, &presentInfo);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_bFramebufferResized)
+	{
+		m_bFramebufferResized = false;
+		HandleWindowResize();
+	}
+	else if (result != VK_SUCCESS)
+	{
+		LOG_ERROR("Failed to present swap chain image!");
+	}
+
+	// Get next frame 
+	m_uiCurrentFrame = (m_uiCurrentFrame + 1) % Helper::App::MAX_FRAME_DRAWS;
 }
