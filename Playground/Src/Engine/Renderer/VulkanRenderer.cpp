@@ -5,6 +5,8 @@
 #include "VulkanRenderer.h"
 #include "VulkanSwapChain.h"
 
+#include "Engine/ImGui/UIManager.h"
+
 //---------------------------------------------------------------------------------------------------------------------
 VulkanRenderer::VulkanRenderer()
 {
@@ -448,10 +450,10 @@ void VulkanRenderer::SubmitAndPresentFrame()
 	VkSemaphore waitSemaphores[] = { m_vecSemaphoreImageAvailable[m_uiCurrentFrame] };
 	VkSemaphore signalSemaphores[] = { m_vecSemaphoreRenderFinished[m_uiCurrentFrame] };
 
-	std::array<VkCommandBuffer, 1> commandBuffers =
+	std::array<VkCommandBuffer, 2> commandBuffers =
 	{
-		m_pDevice->m_vecCommandBufferGraphics[m_uiSwapchainImageIndex]
-		//UIManager::getInstance().m_vecCommandBuffers[imageIndex]
+		m_pDevice->m_vecCommandBufferGraphics[m_uiSwapchainImageIndex],
+		UIManager::getInstance().m_vecCommandBuffers[m_uiSwapchainImageIndex]
 	};
 
 	VkSubmitInfo submitInfo{};

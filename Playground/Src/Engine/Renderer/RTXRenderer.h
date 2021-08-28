@@ -43,15 +43,6 @@ struct StorageImage
 };
 
 //-----------------------------------------------------------------------------------------------------------------------
-struct DepthStencil
-{
-    VkImage         image;
-    VkImageView     imageView;
-    VkDeviceMemory  memory;
-    VkFormat        format;
-};
-
-//-----------------------------------------------------------------------------------------------------------------------
 struct UniformData
 {
     glm::mat4       view;
@@ -134,11 +125,7 @@ private:
     AccelerationStructure                               m_vkBottomLevelAS;
     AccelerationStructure                               m_vkTopLevelAS;
     StorageImage                                        m_vkStorageImage;
-    
-    //DepthStencil                                        m_vkDepthStencil;
-    //VkRenderPass                                        m_vkRenderPass;
-    //VkFramebuffer                                       m_vkFramebuffer;
-    
+
     ShaderUniformsRT*                                   m_pShaderUniformsRT;
 
 

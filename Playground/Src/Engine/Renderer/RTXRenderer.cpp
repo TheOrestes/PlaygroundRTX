@@ -7,6 +7,7 @@
 #include "Engine/RenderObjects/HDRISkydome.h"
 #include "Engine/Scene.h"      
 #include "Engine/Helpers/Camera.h"
+#include "Engine/ImGui/UIManager.h"
 
 //---------------------------------------------------------------------------------------------------------------------
 RTXRenderer::RTXRenderer()
@@ -57,6 +58,9 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
         CreateRayTracingDescriptorSet();
         CreateRayTracingGraphicsPipeline();
         CreateRayTracingBindingTable();
+
+        // Initialize UI Manager!
+        UIManager::getInstance().Initialize(m_pWindow, m_vkInstance, m_pDevice, m_pSwapChain);
 
         // Create a buffer
         // m_vkBufferSize = m_pSwapChain->m_vkSwapchainExtent.width * m_pSwapChain->m_vkSwapchainExtent.height * 3 * sizeof(float);
@@ -112,6 +116,12 @@ void RTXRenderer::Render()
 {
     VulkanRenderer::BeginFrame();
     RecordCommands(m_uiSwapchainImageIndex);
+
+    UIManager::getInstance().BeginRender();
+    //UIManager::getInstance().RenderSceneUI(m_pScene);
+    UIManager::getInstance().RenderDebugStats();
+    UIManager::getInstance().EndRender(m_pSwapChain, m_uiSwapchainImageIndex);
+
     VulkanRenderer::SubmitAndPresentFrame();   
 }
 
@@ -120,6 +130,8 @@ void RTXRenderer::Cleanup()
 {
     // Wait until no action being run on device before destroying! 
     vkDeviceWaitIdle(m_pDevice->m_vkLogicalDevice);
+
+    UIManager::getInstance().Cleanup(m_pDevice);
 
     vkDestroyDescriptorPool(m_pDevice->m_vkLogicalDevice, m_vkDescriptorPoolRayTracing, nullptr);
     vkDestroyDescriptorSetLayout(m_pDevice->m_vkLogicalDevice, m_vkDescriptorSetLayoutRayTracing, nullptr);
@@ -252,7 +264,7 @@ void RTXRenderer::RecordCommands(uint32_t currentImage)
                                           m_pDevice->m_vecCommandBufferGraphics[currentImage],
                                           m_pSwapChain->m_vecSwapchainImages[currentImage],
                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                                          VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           subresourceRange);
 
     Helper::Vulkan::TransitionImageLayout(m_pDevice,
@@ -288,6 +300,8 @@ void RTXRenderer::HandleWindowResize()
 
     vkUpdateDescriptorSets(m_pDevice->m_vkLogicalDevice, 1, &resultImageWrite, 0, VK_NULL_HANDLE);
 
+    UIManager::getInstance().HandleWindowResize(m_pWindow, m_vkInstance, m_pDevice, m_pSwapChain);
+
     LOG_DEBUG("Recreating SwapChain End");
 }
 
@@ -295,6 +309,8 @@ void RTXRenderer::HandleWindowResize()
 void RTXRenderer::CleanupOnWindowResize()
 {
     VulkanRenderer::CleanupOnWindowResize();
+
+    UIManager::getInstance().CleanupOnWindowResize(m_pDevice);
 
     vkDestroyImageView(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.imageView, nullptr);
     vkDestroyImage(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.image, nullptr);
