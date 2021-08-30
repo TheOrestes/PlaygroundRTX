@@ -9,7 +9,7 @@ Camera::Camera()
     
     m_vecCameraUp = glm::vec3(0,1,0);
     m_fFOV = 45.0f;
-    m_fAspect = Helper::App::WINDOW_WIDTH / Helper::App::WINDOW_HEIGHT;
+    m_fAspect = App::WINDOW_WIDTH / App::WINDOW_HEIGHT;
     m_fNearClip = 0.01f;
     m_fFarClip = 10000.0f;
     m_vecCameraPositionDelta = glm::vec3(0);
@@ -35,7 +35,7 @@ void Camera::Reset()
 //---------------------------------------------------------------------------------------------------------------------
 void Camera::Update(float dt)
 {
-    m_vecCameraDirection = glm::normalize(m_vecCameraLookAt - m_vecCameraPosition);
+    m_vecCameraDirection = glm::normalize(m_vecCameraLookAt - m_vecCameraPosition);     
 
     m_matProjection = glm::perspective(m_fFOV, m_fAspect, m_fNearClip, m_fFarClip);
 
@@ -127,7 +127,7 @@ void Camera::ChangePitch(float degrees)
         degrees = m_fMaxPitchRate;
     }
 
-    m_fCameraPitch += degrees;
+    m_fCameraPitch -= degrees;
 
     //Check bounds for the camera pitch
     if (m_fCameraPitch > 360.0f) 

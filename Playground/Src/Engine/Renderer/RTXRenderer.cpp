@@ -29,7 +29,6 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
     // Get the ray tracing & AS related function ptrs
     vkGetBufferDeviceAddressKHR                     = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkGetBufferDeviceAddressKHR"));
     vkCreateAccelerationStructureKHR                = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkCreateAccelerationStructureKHR"));
-    vkDestroyAccelerationStructureKHR               = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkDestroyAccelerationStructureKHR"));
     vkGetAccelerationStructureBuildSizesKHR         = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureBuildSizesKHR"));
     vkGetAccelerationStructureDeviceAddressKHR      = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureDeviceAddressKHR"));
     vkCmdBuildAccelerationStructuresKHR             = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkCmdBuildAccelerationStructuresKHR"));
@@ -47,7 +46,7 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
         //m_pScene = new Scene();
         //m_pScene->LoadScene(m_pDevice, m_pSwapChain);
 
-        m_pShaderUniformsRT = new ShaderUniformsRT();
+        m_pShaderUniformsRT = new RTShaderUniforms();
         m_pShaderUniformsRT->CreateBuffer(m_pDevice, m_pSwapChain);
 
         m_vecShaderModules.clear();
@@ -61,34 +60,6 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
 
         // Initialize UI Manager!
         UIManager::getInstance().Initialize(m_pWindow, m_vkInstance, m_pDevice, m_pSwapChain);
-
-        // Create a buffer
-        // m_vkBufferSize = m_pSwapChain->m_vkSwapchainExtent.width * m_pSwapChain->m_vkSwapchainExtent.height * 3 * sizeof(float);
-        
-        // m_pDevice->CreateBuffer(m_vkBufferSize, 
-        //                         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 
-        //                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-        //                         &m_vkBufferImage,
-        //                         &m_vkDeviceMemoryImage);
-        // 
-        // RecordCommands(0);
-        // 
-        // // Get the image data back from the GPU
-        // VkBuffer stagingBuffer;
-        // VkDeviceMemory stagingMemory;
-        // 
-        // // copy image data to staging buffer
-        // void* data;
-        // vkMapMemory(m_pDevice->m_vkLogicalDevice, m_vkDeviceMemoryImage, 0, m_vkBufferSize, 0, (void**)&data);
-        // 
-        // //float* fData = reinterpret_cast<float*>(data);
-        // stbi_write_hdr("out.hdr", 
-        //                 m_pSwapChain->m_vkSwapchainExtent.width, 
-        //                 m_pSwapChain->m_vkSwapchainExtent.height, 
-        //                 3, reinterpret_cast<float*>(data));
-        // 
-        // //memcpy(reinterpret_cast<float*>(data), m_vkBufferImage, m_vkBufferSize);
-        // vkUnmapMemory(m_pDevice->m_vkLogicalDevice, m_vkDeviceMemoryImage);
     }
     catch (const std::runtime_error& e)
     {
@@ -105,8 +76,8 @@ void RTXRenderer::Update(float dt)
     VulkanRenderer::Update(dt);
 
     // Update View & Projection matrix data!
-    m_pShaderUniformsRT->shaderData.view        = glm::inverse(Camera::getInstance().m_matView);
-    m_pShaderUniformsRT->shaderData.projection  = glm::inverse(Camera::getInstance().m_matProjection);
+    m_pShaderUniformsRT->uniformData.view        = glm::inverse(Camera::getInstance().m_matView);
+    m_pShaderUniformsRT->uniformData.projection  = glm::inverse(Camera::getInstance().m_matProjection);
 
     m_pShaderUniformsRT->UpdateUniforms(m_pDevice);
 }
@@ -144,35 +115,18 @@ void RTXRenderer::Cleanup()
         vkDestroyShaderModule(m_pDevice->m_vkLogicalDevice, m_vecShaderModules[i], nullptr);
     }
 
-    vkDestroyImageView(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.imageView, nullptr);
-    vkDestroyImage(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.image, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.memory, nullptr);
+    m_StorageImage.Cleanup(m_pDevice);
 
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkBottomLevelAS.memory, nullptr);
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkBottomLevelAS.buffer, nullptr);
-    vkDestroyAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, m_vkBottomLevelAS.handle, nullptr);
+    m_BottomLevelAS.Cleanup(m_pDevice);
+    m_TopLevelAS.Cleanup(m_pDevice);
 
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkTopLevelAS.memory, nullptr);
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkTopLevelAS.buffer, nullptr);
-    vkDestroyAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, m_vkTopLevelAS.handle, nullptr);
+    m_VertexBuffer.Cleanup(m_pDevice);
+    m_IndexBuffer.Cleanup(m_pDevice);
+    m_TransformBuffer.Cleanup(m_pDevice);
 
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkVertexBuffer, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkVertexBufferDeviceMemory, nullptr);
-
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkIndexBuffer, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkIndexBufferDeviceMemory, nullptr);
-
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkTransformBuffer, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkTransformBufferDeviceMemory, nullptr);
-
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkRaygenShaderBindingTable, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkRaygenShaderBindingTableDeviceMemory, nullptr);
-
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkMissShaderBindingTable, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkMissShaderBindingTableDeviceMemory, nullptr);
-
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, m_vkHitShaderBindingTable, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkHitShaderBindingTableDeviceMemory, nullptr);
+    m_RaygenShaderBindingTable.Cleanup(m_pDevice);
+    m_MissShaderBindingTable.Cleanup(m_pDevice);
+    m_HitShaderBindingTable.Cleanup(m_pDevice);
 
     m_pShaderUniformsRT->Cleanup(m_pDevice);
     SAFE_DELETE(m_pShaderUniformsRT);
@@ -193,20 +147,20 @@ void RTXRenderer::RecordCommands(uint32_t currentImage)
     VKRESULT_CHECK(vkBeginCommandBuffer(m_pDevice->m_vecCommandBufferGraphics[currentImage], &bufferBeginInfo));
 
     VkImageSubresourceRange subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-    const uint32_t handleSizeAligned = Helper::Vulkan::alignedSize(m_vkRayTracingPipelineProperties.shaderGroupHandleSize, m_vkRayTracingPipelineProperties.shaderGroupHandleAlignment);
+    const uint32_t handleSizeAligned = Vulkan::alignedSize(m_vkRayTracingPipelineProperties.shaderGroupHandleSize, m_vkRayTracingPipelineProperties.shaderGroupHandleAlignment);
 
     VkStridedDeviceAddressRegionKHR raygenShaderSbtEntry{};
-    raygenShaderSbtEntry.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, m_vkRaygenShaderBindingTable);
+    raygenShaderSbtEntry.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_RaygenShaderBindingTable.buffer);
     raygenShaderSbtEntry.stride = handleSizeAligned;
     raygenShaderSbtEntry.size = handleSizeAligned;
 
     VkStridedDeviceAddressRegionKHR missShaderSbtEntry{};
-    missShaderSbtEntry.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, m_vkMissShaderBindingTable);
+    missShaderSbtEntry.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_MissShaderBindingTable.buffer);
     missShaderSbtEntry.stride = handleSizeAligned;
     missShaderSbtEntry.size = handleSizeAligned;
 
     VkStridedDeviceAddressRegionKHR hitShaderSbtEntry{};
-    hitShaderSbtEntry.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, m_vkHitShaderBindingTable);
+    hitShaderSbtEntry.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_HitShaderBindingTable.buffer);
     hitShaderSbtEntry.stride = handleSizeAligned;
     hitShaderSbtEntry.size = handleSizeAligned;
 
@@ -231,16 +185,16 @@ void RTXRenderer::RecordCommands(uint32_t currentImage)
 
     // Prepare current swap chain image as transfer destination
 
-    Helper::Vulkan::TransitionImageLayout(m_pDevice,
+    Vulkan::TransitionImageLayout(m_pDevice,
                                           m_pDevice->m_vecCommandBufferGraphics[currentImage],
                                           m_pSwapChain->m_vecSwapchainImages[currentImage],
                                           VK_IMAGE_LAYOUT_UNDEFINED,
                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                           subresourceRange);
    
-   Helper::Vulkan::TransitionImageLayout(m_pDevice,
+   Vulkan::TransitionImageLayout(m_pDevice,
                                          m_pDevice->m_vecCommandBufferGraphics[currentImage],
-                                         m_vkStorageImage.image,
+                                         m_StorageImage.image,
                                          VK_IMAGE_LAYOUT_GENERAL,
                                          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                          subresourceRange);
@@ -253,23 +207,23 @@ void RTXRenderer::RecordCommands(uint32_t currentImage)
     copyRegion.extent = { m_pSwapChain->m_vkSwapchainExtent.width, m_pSwapChain->m_vkSwapchainExtent.height, 1 };
 
     vkCmdCopyImage(m_pDevice->m_vecCommandBufferGraphics[currentImage], 
-                   m_vkStorageImage.image, 
+                   m_StorageImage.image, 
                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, m_pSwapChain->m_vecSwapchainImages[currentImage], 
                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
                    1, 
                    &copyRegion);
 
     // Transition swap chain image back for presentation
-    Helper::Vulkan::TransitionImageLayout(m_pDevice,
+    Vulkan::TransitionImageLayout(m_pDevice,
                                           m_pDevice->m_vecCommandBufferGraphics[currentImage],
                                           m_pSwapChain->m_vecSwapchainImages[currentImage],
                                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                           subresourceRange);
 
-    Helper::Vulkan::TransitionImageLayout(m_pDevice,
+    Vulkan::TransitionImageLayout(m_pDevice,
                                           m_pDevice->m_vecCommandBufferGraphics[currentImage],
-                                          m_vkStorageImage.image,
+                                          m_StorageImage.image,
                                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                                           VK_IMAGE_LAYOUT_GENERAL,
                                           subresourceRange);
@@ -287,7 +241,7 @@ void RTXRenderer::HandleWindowResize()
 
     // Update Descriptor!
     VkDescriptorImageInfo storageImageDescriptor = {};
-    storageImageDescriptor.imageView = m_vkStorageImage.imageView;
+    storageImageDescriptor.imageView = m_StorageImage.imageView;
     storageImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet resultImageWrite = {};
@@ -311,12 +265,9 @@ void RTXRenderer::CleanupOnWindowResize()
     VulkanRenderer::CleanupOnWindowResize();
 
     UIManager::getInstance().CleanupOnWindowResize(m_pDevice);
-
-    vkDestroyImageView(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.imageView, nullptr);
-    vkDestroyImage(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.image, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, m_vkStorageImage.memory, nullptr);
+    
+    m_StorageImage.CleanupOnWindowResize(m_pDevice);
 }
-
 //---------------------------------------------------------------------------------------------------------------------
 void RTXRenderer::InitRayTracing()
 {
@@ -349,7 +300,7 @@ void RTXRenderer::CreateBottomLevelAS()
 {
     // 1. Mesh Data : Vertices, Indices & Transform
     // vertex data
-    std::vector<Helper::App::VertexP> vertices;
+    std::vector<App::VertexP> vertices;
     vertices.reserve(3);
 
     vertices.emplace_back(glm::vec3(1,1,0));
@@ -372,11 +323,11 @@ void RTXRenderer::CreateBottomLevelAS()
 
     // 2. Create buffers for Mesh Data
     // Vertex buffer
-    m_pDevice->CreateBufferAndCopyData(vertices.size() * sizeof(Helper::App::VertexP),
+    m_pDevice->CreateBufferAndCopyData(vertices.size() * sizeof(App::VertexP),
                                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &m_vkVertexBuffer,
-                                       &m_vkVertexBufferDeviceMemory,
+                                       &m_VertexBuffer.buffer,
+                                       &m_VertexBuffer.memory,
                                        vertices.data(),
                                        "BLAS_VB");
 
@@ -384,8 +335,8 @@ void RTXRenderer::CreateBottomLevelAS()
     m_pDevice->CreateBufferAndCopyData(indices.size() * sizeof(uint32_t),
                                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &m_vkIndexBuffer,
-                                       &m_vkIndexBufferDeviceMemory,
+                                       &m_IndexBuffer.buffer,
+                                       &m_IndexBuffer.memory,
                                        indices.data(),
                                        "BLAS_IB");
 
@@ -393,8 +344,8 @@ void RTXRenderer::CreateBottomLevelAS()
     m_pDevice->CreateBufferAndCopyData(sizeof(VkTransformMatrixKHR),
                                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &m_vkTransformBuffer,
-                                       &m_vkTransformBufferDeviceMemory,
+                                       &m_TransformBuffer.buffer,
+                                       &m_TransformBuffer.memory,
                                        &transformMat,
                                        "BLAS_TB");
 
@@ -405,9 +356,9 @@ void RTXRenderer::CreateBottomLevelAS()
     VkDeviceOrHostAddressConstKHR ibAddress = {};
     VkDeviceOrHostAddressConstKHR trAddress = {};
     
-    vbAddress.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, m_vkVertexBuffer);
-    ibAddress.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, m_vkIndexBuffer);
-    trAddress.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, m_vkTransformBuffer);
+    vbAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_VertexBuffer.buffer);
+    ibAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_IndexBuffer.buffer);
+    trAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_TransformBuffer.buffer);
 
     // 4. Define AS Geometry by providing vb, ib & tb addresses 
     VkAccelerationStructureGeometryKHR accelStructureGeometry = {};
@@ -418,7 +369,7 @@ void RTXRenderer::CreateBottomLevelAS()
     accelStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
     accelStructureGeometry.geometry.triangles.vertexData = vbAddress;
     accelStructureGeometry.geometry.triangles.maxVertex = 3;
-    accelStructureGeometry.geometry.triangles.vertexStride = sizeof(Helper::App::VertexP);
+    accelStructureGeometry.geometry.triangles.vertexStride = sizeof(App::VertexP);
     accelStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
     accelStructureGeometry.geometry.triangles.indexData = ibAddress;
     accelStructureGeometry.geometry.triangles.transformData.deviceAddress = 0;
@@ -447,32 +398,32 @@ void RTXRenderer::CreateBottomLevelAS()
     m_pDevice->CreateBuffer(accelStructBuildSizesInfo.accelerationStructureSize,
                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                             VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
-                            &m_vkBottomLevelAS.buffer,
-                            &m_vkBottomLevelAS.memory,
+                            &m_BottomLevelAS.buffer,
+                            &m_BottomLevelAS.memory,
                             "BLAS_AS");
 
     VkAccelerationStructureCreateInfoKHR accelStructCreateInfo = {};
     accelStructCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-    accelStructCreateInfo.buffer = m_vkBottomLevelAS.buffer;
+    accelStructCreateInfo.buffer = m_BottomLevelAS.buffer;
     accelStructCreateInfo.size = accelStructBuildSizesInfo.accelerationStructureSize;
     accelStructCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
     VKRESULT_CHECK_INFO(vkCreateAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, 
                                                          &accelStructCreateInfo, 
                                                          nullptr, 
-                                                         &m_vkBottomLevelAS.handle),
+                                                         &m_BottomLevelAS.handle),
                         "Failed to create BLAS",
                         "Successfully created BLAS!");
 
     // 7. Create a small scratch buffer used during build of BLAS
-    RayTracingScratchBuffer scratchBuffer = CreateScratchBuffer(accelStructBuildSizesInfo.buildScratchSize);
+    Vulkan::RTScratchBuffer scratchBuffer = CreateScratchBuffer(accelStructBuildSizesInfo.buildScratchSize);
 
     VkAccelerationStructureBuildGeometryInfoKHR accelStructBuildGeomInfo2 = {};
     accelStructBuildGeomInfo2.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelStructBuildGeomInfo2.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
     accelStructBuildGeomInfo2.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     accelStructBuildGeomInfo2.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    accelStructBuildGeomInfo2.dstAccelerationStructure = m_vkBottomLevelAS.handle;
+    accelStructBuildGeomInfo2.dstAccelerationStructure = m_BottomLevelAS.handle;
     accelStructBuildGeomInfo2.geometryCount = 1;
     accelStructBuildGeomInfo2.pGeometries = &accelStructureGeometry;
     accelStructBuildGeomInfo2.scratchData.deviceAddress = scratchBuffer.deviceAddress;
@@ -514,11 +465,11 @@ void RTXRenderer::CreateBottomLevelAS()
     // 9. Finally, get hold of device address of BLAS!
     VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
     accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-    accelerationDeviceAddressInfo.accelerationStructure = m_vkBottomLevelAS.handle;
-    m_vkBottomLevelAS.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->m_vkLogicalDevice, &accelerationDeviceAddressInfo);
+    accelerationDeviceAddressInfo.accelerationStructure = m_BottomLevelAS.handle;
+    m_BottomLevelAS.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->m_vkLogicalDevice, &accelerationDeviceAddressInfo);
 
     // 10. Scratch buffer no lonoger needed!
-    DeleteScratchBuffer(scratchBuffer);
+    scratchBuffer.Cleanup(m_pDevice);
 }                                   
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -540,21 +491,20 @@ void RTXRenderer::CreateTopLevelAS()
     accelStructInstance.mask = 0xFF;
     accelStructInstance.instanceShaderBindingTableRecordOffset = 0;
     accelStructInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-    accelStructInstance.accelerationStructureReference = m_vkBottomLevelAS.deviceAddress;
+    accelStructInstance.accelerationStructureReference = m_BottomLevelAS.deviceAddress;
 
     // Buffer for instance data
-    VkBuffer instanceBuffer;
-    VkDeviceMemory instanceBufferDeviceMemory;
+    Vulkan::Buffer instanceBuffer;
 
     // 2. Create buffer for Instance data!
     m_pDevice->CreateBufferAndCopyData(sizeof(VkAccelerationStructureInstanceKHR),
                                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &instanceBuffer, &instanceBufferDeviceMemory, &accelStructInstance, "TLAS_Instance");
+                                       &instanceBuffer.buffer, &instanceBuffer.memory, &accelStructInstance, "TLAS_Instance");
 
     // 3. Get Device address of Buffer just created!
     VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress = {};
-    instanceDataDeviceAddress.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, instanceBuffer);
+    instanceDataDeviceAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, instanceBuffer.buffer);
 
     // 4. Define AS data by providing buffer's device address
     VkAccelerationStructureGeometryKHR accelStructureGeom = {};
@@ -587,26 +537,26 @@ void RTXRenderer::CreateTopLevelAS()
     m_pDevice->CreateBuffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                             VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
-                            &m_vkTopLevelAS.buffer,
-                            &m_vkTopLevelAS.memory,
+                            &m_TopLevelAS.buffer,
+                            &m_TopLevelAS.memory,
                             "TLAS_AS");
     
     VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
     accelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-    accelerationStructureCreateInfo.buffer = m_vkTopLevelAS.buffer;
+    accelerationStructureCreateInfo.buffer = m_TopLevelAS.buffer;
     accelerationStructureCreateInfo.size = accelerationStructureBuildSizesInfo.accelerationStructureSize;
     accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    vkCreateAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, &accelerationStructureCreateInfo, nullptr, &m_vkTopLevelAS.handle);
+    vkCreateAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, &accelerationStructureCreateInfo, nullptr, &m_TopLevelAS.handle);
 
     // 7. Create a small scratch buffer used during building of the TLAS
-    RayTracingScratchBuffer scratchBuffer = CreateScratchBuffer(accelerationStructureBuildSizesInfo.buildScratchSize);
+    Vulkan::RTScratchBuffer scratchBuffer = CreateScratchBuffer(accelerationStructureBuildSizesInfo.buildScratchSize);
 
     VkAccelerationStructureBuildGeometryInfoKHR accelBuildGeometryInfo2 = {};
     accelBuildGeometryInfo2.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelBuildGeometryInfo2.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     accelBuildGeometryInfo2.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
     accelBuildGeometryInfo2.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    accelBuildGeometryInfo2.dstAccelerationStructure = m_vkTopLevelAS.handle;
+    accelBuildGeometryInfo2.dstAccelerationStructure = m_TopLevelAS.handle;
     accelBuildGeometryInfo2.geometryCount = 1;
     accelBuildGeometryInfo2.pGeometries = &accelStructureGeom;
     accelBuildGeometryInfo2.scratchData.deviceAddress = scratchBuffer.deviceAddress;
@@ -646,14 +596,12 @@ void RTXRenderer::CreateTopLevelAS()
     // 9. Finally, get hold of device address of TLAS!
     VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
     accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-    accelerationDeviceAddressInfo.accelerationStructure = m_vkTopLevelAS.handle;
-    m_vkTopLevelAS.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->m_vkLogicalDevice, &accelerationDeviceAddressInfo);
+    accelerationDeviceAddressInfo.accelerationStructure = m_TopLevelAS.handle;
+    m_TopLevelAS.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->m_vkLogicalDevice, &accelerationDeviceAddressInfo);
 
-    // 10. Scratch buffer no lonoger needed!
-    DeleteScratchBuffer(scratchBuffer);
-
-    vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, instanceBuffer, nullptr);
-    vkFreeMemory(m_pDevice->m_vkLogicalDevice, instanceBufferDeviceMemory, nullptr);
+    // 10. Scratch buffer & Instance buffer no longer needed!
+    scratchBuffer.Cleanup(m_pDevice);
+    instanceBuffer.Cleanup(m_pDevice);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -726,7 +674,7 @@ void RTXRenderer::CreateRayTracingDescriptorSet()
     VkWriteDescriptorSetAccelerationStructureKHR descASInfo = {};
     descASInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
     descASInfo.accelerationStructureCount = 1;
-    descASInfo.pAccelerationStructures = &m_vkTopLevelAS.handle;
+    descASInfo.pAccelerationStructures = &m_TopLevelAS.handle;
 
     VkWriteDescriptorSet accelStructWrite = {};
     accelStructWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -738,7 +686,7 @@ void RTXRenderer::CreateRayTracingDescriptorSet()
 
     // Descriptor for Storage/Result Image
     VkDescriptorImageInfo storageImageDescriptor = {};
-    storageImageDescriptor.imageView = m_vkStorageImage.imageView;
+    storageImageDescriptor.imageView = m_StorageImage.imageView;
     storageImageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkWriteDescriptorSet resultImageWrite = {};
@@ -751,9 +699,9 @@ void RTXRenderer::CreateRayTracingDescriptorSet()
 
     // Descriptor for Uniform buffer
     VkDescriptorBufferInfo ubBufferInfo = {};
-    ubBufferInfo.buffer = m_pShaderUniformsRT->vkBuffer;	    // buffer to get data from
-    ubBufferInfo.offset = 0;								// position of start of data
-    ubBufferInfo.range = sizeof(ShaderUniformsRT);			// size of data
+    ubBufferInfo.buffer = m_pShaderUniformsRT->uniformDataBuffer.buffer;    // buffer to get data from
+    ubBufferInfo.offset = 0;								                // position of start of data
+    ubBufferInfo.range = sizeof(RTShaderUniforms);			                // size of data
 
     VkWriteDescriptorSet uboWrite = {};
     uboWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -792,7 +740,7 @@ void RTXRenderer::CreateRayTracingGraphicsPipeline()
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
     // Raygen
-    VkShaderModule raygenShaderModule = Helper::Vulkan::CreateShaderModule(m_pDevice, "Assets/Shaders/raygenBasic.rgen.spv");
+    VkShaderModule raygenShaderModule = Vulkan::CreateShaderModule(m_pDevice, "Assets/Shaders/raygenBasic.rgen.spv");
     m_vecShaderModules.push_back(raygenShaderModule);
 
     VkPipelineShaderStageCreateInfo raygenShaderStageCreateInfo = {};
@@ -814,7 +762,7 @@ void RTXRenderer::CreateRayTracingGraphicsPipeline()
     m_vecRayTracingShaderGroupsCreateInfos.push_back(rayGenShaderGroupCreateInfo);
 
     // Miss
-    VkShaderModule missShaderModule = Helper::Vulkan::CreateShaderModule(m_pDevice, "Assets/Shaders/missBasic.rmiss.spv");
+    VkShaderModule missShaderModule = Vulkan::CreateShaderModule(m_pDevice, "Assets/Shaders/missBasic.rmiss.spv");
     m_vecShaderModules.push_back(missShaderModule);
 
     VkPipelineShaderStageCreateInfo missShaderStageCreateInfo = {};
@@ -836,7 +784,7 @@ void RTXRenderer::CreateRayTracingGraphicsPipeline()
     m_vecRayTracingShaderGroupsCreateInfos.push_back(missShaderGroupCreateInfo);
 
     // Closest Hit
-    VkShaderModule closestHitShaderModule = Helper::Vulkan::CreateShaderModule(m_pDevice, "Assets/Shaders/closestHitBasic.rchit.spv");
+    VkShaderModule closestHitShaderModule = Vulkan::CreateShaderModule(m_pDevice, "Assets/Shaders/closestHitBasic.rchit.spv");
     m_vecShaderModules.push_back(closestHitShaderModule);
 
     VkPipelineShaderStageCreateInfo closestHitShaderStageCreateInfo = {};
@@ -882,7 +830,7 @@ void RTXRenderer::CreateRayTracingGraphicsPipeline()
 void RTXRenderer::CreateRayTracingBindingTable()
 {
     const uint32_t handleSize = m_vkRayTracingPipelineProperties.shaderGroupHandleSize;
-    const uint32_t handleSizeAligned = Helper::Vulkan::alignedSize(m_vkRayTracingPipelineProperties.shaderGroupHandleSize,
+    const uint32_t handleSizeAligned = Vulkan::alignedSize(m_vkRayTracingPipelineProperties.shaderGroupHandleSize,
                                                                    m_vkRayTracingPipelineProperties.shaderGroupHandleAlignment);
 
     const uint32_t groupCount = static_cast<uint32_t>(m_vecRayTracingShaderGroupsCreateInfos.size());
@@ -896,25 +844,25 @@ void RTXRenderer::CreateRayTracingBindingTable()
     const VkBufferUsageFlags bufferUsageFlags = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     const VkMemoryPropertyFlags memoryUsageFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
-    m_pDevice->CreateBuffer(handleSize, bufferUsageFlags, memoryUsageFlags, &m_vkRaygenShaderBindingTable, &m_vkRaygenShaderBindingTableDeviceMemory);
-    m_pDevice->CreateBuffer(handleSize, bufferUsageFlags, memoryUsageFlags, &m_vkMissShaderBindingTable, &m_vkMissShaderBindingTableDeviceMemory);
-    m_pDevice->CreateBuffer(handleSize, bufferUsageFlags, memoryUsageFlags, &m_vkHitShaderBindingTable, &m_vkHitShaderBindingTableDeviceMemory);
+    m_pDevice->CreateBuffer(handleSize, bufferUsageFlags, memoryUsageFlags, &m_RaygenShaderBindingTable.buffer, &m_RaygenShaderBindingTable.memory);
+    m_pDevice->CreateBuffer(handleSize, bufferUsageFlags, memoryUsageFlags, &m_MissShaderBindingTable.buffer, &m_MissShaderBindingTable.memory);
+    m_pDevice->CreateBuffer(handleSize, bufferUsageFlags, memoryUsageFlags, &m_HitShaderBindingTable.buffer, &m_HitShaderBindingTable.memory);
 
     void* data;
-    VKRESULT_CHECK(vkMapMemory(m_pDevice->m_vkLogicalDevice, m_vkRaygenShaderBindingTableDeviceMemory, 0, handleSize, 0, &data));
+    VKRESULT_CHECK(vkMapMemory(m_pDevice->m_vkLogicalDevice, m_RaygenShaderBindingTable.memory, 0, handleSize, 0, &data));
     memcpy(data, shaderHandleStorage.data(), handleSize);
     
-    VKRESULT_CHECK(vkMapMemory(m_pDevice->m_vkLogicalDevice, m_vkMissShaderBindingTableDeviceMemory, 0, handleSize, 0, &data));
+    VKRESULT_CHECK(vkMapMemory(m_pDevice->m_vkLogicalDevice, m_MissShaderBindingTable.memory, 0, handleSize, 0, &data));
     memcpy(data, shaderHandleStorage.data() + handleSizeAligned, handleSize);
 
-    VKRESULT_CHECK(vkMapMemory(m_pDevice->m_vkLogicalDevice, m_vkHitShaderBindingTableDeviceMemory, 0, handleSize, 0, &data));
+    VKRESULT_CHECK(vkMapMemory(m_pDevice->m_vkLogicalDevice, m_HitShaderBindingTable.memory, 0, handleSize, 0, &data));
     memcpy(data, shaderHandleStorage.data() + handleSizeAligned * 2, handleSize);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-RayTracingScratchBuffer RTXRenderer::CreateScratchBuffer(VkDeviceSize size)
+Vulkan::RTScratchBuffer RTXRenderer::CreateScratchBuffer(VkDeviceSize size)
 {
-    RayTracingScratchBuffer scratchBuffer = {};
+    Vulkan::RTScratchBuffer scratchBuffer = {};
 
     VkBufferCreateInfo bufferCreateInfo = {};
     bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -941,7 +889,7 @@ RayTracingScratchBuffer RTXRenderer::CreateScratchBuffer(VkDeviceSize size)
     VKRESULT_CHECK(vkAllocateMemory(m_pDevice->m_vkLogicalDevice, &memAllocInfo, nullptr, &scratchBuffer.memory));
     VKRESULT_CHECK(vkBindBufferMemory(m_pDevice->m_vkLogicalDevice, scratchBuffer.handle, scratchBuffer.memory, 0));
     
-    scratchBuffer.deviceAddress = Helper::Vulkan::GetBufferDeviceAddress(m_pDevice, scratchBuffer.handle);
+    scratchBuffer.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, scratchBuffer.handle);
 
     return scratchBuffer;
 }
@@ -950,20 +898,20 @@ RayTracingScratchBuffer RTXRenderer::CreateScratchBuffer(VkDeviceSize size)
 void RTXRenderer::CreateStorageImage()
 {
     // Create storage image
-    m_vkStorageImage.image = Helper::Vulkan::CreateImage(m_pDevice,
-                                                         m_pSwapChain->m_vkSwapchainExtent.width,
-                                                         m_pSwapChain->m_vkSwapchainExtent.height,
-                                                         m_pSwapChain->m_vkSwapchainImageFormat,
-                                                         VK_IMAGE_TILING_OPTIMAL,
-                                                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
-                                                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                                         &m_vkStorageImage.memory);
+    m_StorageImage.image = Vulkan::CreateImage(m_pDevice,
+                                               m_pSwapChain->m_vkSwapchainExtent.width,
+                                               m_pSwapChain->m_vkSwapchainExtent.height,
+                                               m_pSwapChain->m_vkSwapchainImageFormat,
+                                               VK_IMAGE_TILING_OPTIMAL,
+                                               VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+                                               VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                               &m_StorageImage.memory);
 
     // Create storage image view
-    m_vkStorageImage.imageView = Helper::Vulkan::CreateImageView(m_pDevice, 
-                                                                 m_vkStorageImage.image,
-                                                                 m_pSwapChain->m_vkSwapchainImageFormat,
-                                                                 VK_IMAGE_ASPECT_COLOR_BIT);
+    m_StorageImage.imageView = Vulkan::CreateImageView(m_pDevice, 
+                                                       m_StorageImage.image,
+                                                       m_pSwapChain->m_vkSwapchainImageFormat,
+                                                       VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkImageSubresourceRange subrResourceRange = {};
     subrResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -972,53 +920,38 @@ void RTXRenderer::CreateStorageImage()
     subrResourceRange.layerCount = 1;
     subrResourceRange.levelCount = 1;
 
-    Helper::Vulkan::TransitionImageLayout(m_pDevice, 
-                                          m_vkStorageImage.image, 
-                                          VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
-                                          subrResourceRange);
+    Vulkan::TransitionImageLayout(m_pDevice, 
+                                  m_StorageImage.image, 
+                                  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL,
+                                  subrResourceRange);
     
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void RTXRenderer::DeleteScratchBuffer(RayTracingScratchBuffer& buffer)
+void RTShaderUniforms::CreateBuffer(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain)
 {
-    if (buffer.memory != VK_NULL_HANDLE)
-    {
-        vkFreeMemory(m_pDevice->m_vkLogicalDevice, buffer.memory, nullptr);
-    }
-
-    if (buffer.handle != VK_NULL_HANDLE)
-    {
-        vkDestroyBuffer(m_pDevice->m_vkLogicalDevice, buffer.handle, nullptr);
-    }
-}
-
-//---------------------------------------------------------------------------------------------------------------------
-void ShaderUniformsRT::CreateBuffer(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain)
-{
-    pDevice->CreateBuffer(sizeof(ShaderUniformsRT), 
+    pDevice->CreateBuffer(sizeof(RTShaderUniforms),
                           VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                           VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                          &vkBuffer, &vkDeviceMemory, "ShaderUniformsRT");
+                          &uniformDataBuffer.buffer, &uniformDataBuffer.memory, "RTShaderUniforms");
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void ShaderUniformsRT::UpdateUniforms(VulkanDevice* pDevice)
+void RTShaderUniforms::UpdateUniforms(VulkanDevice* pDevice)
 {
     void* data;
-    vkMapMemory(pDevice->m_vkLogicalDevice, vkDeviceMemory, 0, sizeof(UniformData), 0, &data);
-    memcpy(data, &shaderData, sizeof(UniformData));
-    vkUnmapMemory(pDevice->m_vkLogicalDevice, vkDeviceMemory);
+    vkMapMemory(pDevice->m_vkLogicalDevice, uniformDataBuffer.memory, 0, sizeof(RTUniformData), 0, &data);
+    memcpy(data, &uniformData, sizeof(RTUniformData));
+    vkUnmapMemory(pDevice->m_vkLogicalDevice, uniformDataBuffer.memory);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void ShaderUniformsRT::Cleanup(VulkanDevice* pDevice)
+void RTShaderUniforms::Cleanup(VulkanDevice* pDevice)
 {
-    vkDestroyBuffer(pDevice->m_vkLogicalDevice, vkBuffer, nullptr);
-    vkFreeMemory(pDevice->m_vkLogicalDevice, vkDeviceMemory, nullptr);
+    uniformDataBuffer.Cleanup(pDevice);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void ShaderUniformsRT::CleanupOnWindowResize(VulkanDevice* pDevice)
+void RTShaderUniforms::CleanupOnWindowResize(VulkanDevice* pDevice)
 {
 }

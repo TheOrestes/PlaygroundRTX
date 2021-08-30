@@ -35,7 +35,7 @@ void VulkanTexture2D::CreateTexture(VulkanDevice* pDevice, std::string fileName,
 		case TextureType::TEXTURE_ALBEDO:
 		{
 			CreateTextureImage(pDevice, fileName);
-			m_vkTextureImageView = Helper::Vulkan::CreateImageView(	pDevice, m_vkTextureImage,
+			m_vkTextureImageView = Vulkan::CreateImageView(	pDevice, m_vkTextureImage,
 																	VK_FORMAT_R8G8B8A8_SRGB,
 																	VK_IMAGE_ASPECT_COLOR_BIT);
 			
@@ -50,7 +50,7 @@ void VulkanTexture2D::CreateTexture(VulkanDevice* pDevice, std::string fileName,
 		case TextureType::TEXTURE_ERROR:
 		{
 			CreateTextureImage(pDevice, fileName);
-			m_vkTextureImageView = Helper::Vulkan::CreateImageView(	pDevice, m_vkTextureImage,
+			m_vkTextureImageView = Vulkan::CreateImageView(	pDevice, m_vkTextureImage,
 																	VK_FORMAT_R8G8B8A8_UNORM,
 																	VK_IMAGE_ASPECT_COLOR_BIT);
 			break;
@@ -59,7 +59,7 @@ void VulkanTexture2D::CreateTexture(VulkanDevice* pDevice, std::string fileName,
 		case TextureType::TEXTURE_HDRI:
 		{
 			CreateTextureHDRI(pDevice, fileName);
-			m_vkTextureImageView = Helper::Vulkan::CreateImageView(	pDevice, m_vkTextureImage,
+			m_vkTextureImageView = Vulkan::CreateImageView(	pDevice, m_vkTextureImage,
 																	VK_FORMAT_R32G32B32A32_SFLOAT,
 																	VK_IMAGE_ASPECT_COLOR_BIT);
 			break;
@@ -163,7 +163,7 @@ void VulkanTexture2D::CreateTextureImage(VulkanDevice* pDevice, std::string file
 	{
 		case TextureType::TEXTURE_ALBEDO:
 		{
-			m_vkTextureImage = Helper::Vulkan::CreateImage(	pDevice, m_iTextureWidth, m_iTextureHeight,
+			m_vkTextureImage = Vulkan::CreateImage(	pDevice, m_iTextureWidth, m_iTextureHeight,
 															VK_FORMAT_R8G8B8A8_SRGB,
 															VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 															VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &m_vkTextureImageMemory);
@@ -177,7 +177,7 @@ void VulkanTexture2D::CreateTextureImage(VulkanDevice* pDevice, std::string file
 		case TextureType::TEXTURE_ROUGHNESS:
 		case TextureType::TEXTURE_ERROR:
 		{
-			m_vkTextureImage = Helper::Vulkan::CreateImage(	pDevice, m_iTextureWidth, m_iTextureHeight,
+			m_vkTextureImage = Vulkan::CreateImage(	pDevice, m_iTextureWidth, m_iTextureHeight,
 															VK_FORMAT_R8G8B8A8_UNORM, 
 															VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
 															VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &m_vkTextureImageMemory);
@@ -186,16 +186,16 @@ void VulkanTexture2D::CreateTextureImage(VulkanDevice* pDevice, std::string file
 	}
 
 	// Transition image to be DST for copy operation
-	Helper::Vulkan::TransitionImageLayout(	pDevice,
+	Vulkan::TransitionImageLayout(	pDevice,
 											m_vkTextureImage,
 											VK_IMAGE_LAYOUT_UNDEFINED,
 											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	// COPY DATA TO IMAGE
-	Helper::Vulkan::CopyImageBuffer(pDevice, imageStagingBuffer, m_vkTextureImage, m_iTextureWidth, m_iTextureHeight);
+	Vulkan::CopyImageBuffer(pDevice, imageStagingBuffer, m_vkTextureImage, m_iTextureWidth, m_iTextureHeight);
 
 	// Transition image to be shader readable for shader usage
-	Helper::Vulkan::TransitionImageLayout(pDevice,
+	Vulkan::TransitionImageLayout(pDevice,
 		m_vkTextureImage,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -246,22 +246,22 @@ void VulkanTexture2D::CreateTextureHDRI(VulkanDevice* pDevice, std::string fileN
 	//	}
 	//}
 
-	m_vkTextureImage = Helper::Vulkan::CreateImage(	pDevice, m_iTextureWidth, m_iTextureHeight,
+	m_vkTextureImage = Vulkan::CreateImage(	pDevice, m_iTextureWidth, m_iTextureHeight,
 													VK_FORMAT_R32G32B32A32_SFLOAT,
 													VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT |									 VK_IMAGE_USAGE_SAMPLED_BIT,
 													VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &m_vkTextureImageMemory);
 		
 	// Transition image to be DST for copy operation
-	Helper::Vulkan::TransitionImageLayout(	pDevice,
+	Vulkan::TransitionImageLayout(	pDevice,
 											m_vkTextureImage,
 											VK_IMAGE_LAYOUT_UNDEFINED,
 											VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	
 	// COPY DATA TO IMAGE
-	Helper::Vulkan::CopyImageBuffer(pDevice, imageStagingBuffer, m_vkTextureImage, m_iTextureWidth, m_iTextureHeight);
+	Vulkan::CopyImageBuffer(pDevice, imageStagingBuffer, m_vkTextureImage, m_iTextureWidth, m_iTextureHeight);
 	
 	// Transition image to be shader readable for shader usage
-	Helper::Vulkan::TransitionImageLayout(pDevice,
+	Vulkan::TransitionImageLayout(pDevice,
 										  m_vkTextureImage,
 										  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 										  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

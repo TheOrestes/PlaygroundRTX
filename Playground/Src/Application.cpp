@@ -17,8 +17,8 @@ Application::Application(const std::string& _title)
     m_pWindow = nullptr;
     m_pRenderer = nullptr;
 
-    m_uiWindowWidth = Helper::App::WINDOW_WIDTH;
-    m_uiWindowHeight = Helper::App::WINDOW_HEIGHT;
+    m_uiWindowWidth = App::WINDOW_WIDTH;
+    m_uiWindowHeight = App::WINDOW_HEIGHT;
 
     m_fDelta = 0.0f;
 }
@@ -65,7 +65,7 @@ bool Application::Initialize()
     glfwSetWindowSizeCallback(m_pWindow, EventWindowResizedCallback);
     glfwSetKeyCallback(m_pWindow, EventKeyHandlerCallback);
     glfwSetCursorPosCallback(m_pWindow, EventMousePositionCallback);
-    glfwSetMouseButtonCallback(m_pWindow, EventMouseButtonCallback);
+    glfwSetMouseButtonCallback(m_pWindow, EventMouseButtonCallback);         
     glfwSetScrollCallback(m_pWindow, EventMouseScrollCallback);
 
     // Create Vulkan Renderer
@@ -156,8 +156,8 @@ void Application::EventKeyHandlerCallback(GLFWwindow* pWindow, int key, int scan
     }
 }
 
-//float lastX = Helper::App::WINDOW_WIDTH / 2.0f;
-//float lastY = Helper::App::WINDOW_HEIGHT / 2.0f;
+//float lastX = App::WINDOW_WIDTH / 2.0f;
+//float lastY = App::WINDOW_HEIGHT / 2.0f;
 //---------------------------------------------------------------------------------------------------------------------
 void Application::EventMousePositionCallback(GLFWwindow* pWindow, double xPos, double yPos)
 {

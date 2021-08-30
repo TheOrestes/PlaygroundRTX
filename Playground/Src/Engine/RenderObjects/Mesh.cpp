@@ -6,7 +6,7 @@
 #include "Engine/Renderer/VulkanDevice.h"
 
 //---------------------------------------------------------------------------------------------------------------------
-Mesh::Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexPNTBT>& vertices, const std::vector<uint32_t>& indices)
+Mesh::Mesh(VulkanDevice* device, const std::vector<App::VertexPNTBT>& vertices, const std::vector<uint32_t>& indices)
 {
 	m_uiVertexCount = vertices.size();
 	m_uiIndexCount = indices.size();
@@ -20,7 +20,7 @@ Mesh::Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexPNTBT>& ve
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-Mesh::Mesh(VulkanDevice* device, const std::vector<Helper::App::VertexPNT>& vertices, const std::vector<uint32_t>& indices)
+Mesh::Mesh(VulkanDevice* device, const std::vector<App::VertexPNT>& vertices, const std::vector<uint32_t>& indices)
 {
 	m_uiVertexCount = vertices.size();
 	m_uiIndexCount = indices.size();
@@ -61,10 +61,10 @@ void Mesh::CleanupOnWindowsResize(VulkanDevice* pDevice)
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Mesh::CreateVertexBuffer(VulkanDevice* pDevice, const std::vector<Helper::App::VertexPNTBT>& vertices)
+void Mesh::CreateVertexBuffer(VulkanDevice* pDevice, const std::vector<App::VertexPNTBT>& vertices)
 {
 	// Get the size of buffer needed for vertices
-	VkDeviceSize bufferSize = m_uiVertexCount * sizeof(Helper::App::VertexPNTBT);
+	VkDeviceSize bufferSize = m_uiVertexCount * sizeof(App::VertexPNTBT);
 
 	// Temporary buffer to "stage" vertex data before transferring to GPU
 	VkBuffer stagingBuffer;
@@ -100,10 +100,10 @@ void Mesh::CreateVertexBuffer(VulkanDevice* pDevice, const std::vector<Helper::A
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void Mesh::CreateVertexBuffer(VulkanDevice* pDevice, const std::vector<Helper::App::VertexPNT>& vertices)
+void Mesh::CreateVertexBuffer(VulkanDevice* pDevice, const std::vector<App::VertexPNT>& vertices)
 {
 	// Get the size of buffer needed for vertices
-	VkDeviceSize bufferSize = m_uiVertexCount * sizeof(Helper::App::VertexPNT);
+	VkDeviceSize bufferSize = m_uiVertexCount * sizeof(App::VertexPNT);
 
 	// Temporary buffer to "stage" vertex data before transferring to GPU
 	VkBuffer stagingBuffer;
@@ -179,8 +179,8 @@ void Mesh::CreateIndexBuffer(VulkanDevice* pDevice, const std::vector<uint32_t>&
 void Mesh::MeshToVkGeometryKHR(VulkanDevice* pDevice)
 {
 	// BottomLevelAS requires raw device address!
-	VkDeviceAddress vbAddress = Helper::Vulkan::GetBufferDeviceAddress(pDevice, m_vkVertexBuffer);
-	VkDeviceAddress ibAddress = Helper::Vulkan::GetBufferDeviceAddress(pDevice, m_vkIndexBuffer);
+	VkDeviceAddress vbAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_vkVertexBuffer);
+	VkDeviceAddress ibAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_vkIndexBuffer);
 
 	uint32_t maxPrimitiveCount = m_uiIndexCount / 3;
 
@@ -189,7 +189,7 @@ void Mesh::MeshToVkGeometryKHR(VulkanDevice* pDevice)
 	trianglesData.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 	trianglesData.vertexFormat = VK_FORMAT_R32G32B32A32_SFLOAT;			 
 	trianglesData.vertexData.deviceAddress = vbAddress;
-	trianglesData.vertexStride = sizeof(Helper::App::VertexPNTBT);
+	trianglesData.vertexStride = sizeof(App::VertexPNTBT);
 	trianglesData.indexType = VK_INDEX_TYPE_UINT32;
 	trianglesData.indexData.deviceAddress = ibAddress;
 	trianglesData.maxVertex = m_uiVertexCount;

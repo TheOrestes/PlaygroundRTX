@@ -261,7 +261,7 @@ void Model::LoadMaterials(VulkanDevice* pDevice, const aiScene* scene)
 //---------------------------------------------------------------------------------------------------------------------
 Mesh Model::LoadMesh(VulkanDevice* pDevice, aiMesh* mesh, const aiScene* scene)
 {
-	std::vector<Helper::App::VertexPNTBT>	vertices;
+	std::vector<App::VertexPNTBT>	vertices;
 	std::vector<uint32_t>					indices;
 	std::vector<uint32_t>					textureIDs;
 

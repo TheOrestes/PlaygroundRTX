@@ -113,7 +113,7 @@ void VulkanRenderer::RunShaderCompiler(const std::string& directoryPath)
 void VulkanRenderer::CreateInstance()
 {
 	// Check if requested validation layer is available with current vulkan instance!
-	if (Helper::Vulkan::g_bEnableValidationLayer && !CheckValidationLayerSupport())
+	if (Vulkan::g_bEnableValidationLayer && !CheckValidationLayerSupport())
 	{
 		LOG_ERROR("Requested Validation Layer not supported!");
 	}
@@ -141,7 +141,7 @@ void VulkanRenderer::CreateInstance()
 	// const char** to std::vector<const char*> conversion 
 	// Add debug messenger extension conditionally!
 	std::vector<const char*> vecExtensions(extensions, extensions + glfwExtensionCount);
-	if (Helper::Vulkan::g_bEnableValidationLayer)
+	if (Vulkan::g_bEnableValidationLayer)
 	{
 		vecExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 	}
@@ -158,10 +158,10 @@ void VulkanRenderer::CreateInstance()
 
 	// Create additional debug messenger just for vkCreateInstance & vkDestroyInstance!
 	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-	if (Helper::Vulkan::g_bEnableValidationLayer)
+	if (Vulkan::g_bEnableValidationLayer)
 	{
-		createInfo.enabledLayerCount = Helper::Vulkan::g_strValidationLayers.size();
-		createInfo.ppEnabledLayerNames = Helper::Vulkan::g_strValidationLayers.data();
+		createInfo.enabledLayerCount = Vulkan::g_strValidationLayers.size();
+		createInfo.ppEnabledLayerNames = Vulkan::g_strValidationLayers.data();
 
 		PopulateDebugMessengerCreateInfo(debugCreateInfo);
 		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
@@ -239,15 +239,15 @@ bool VulkanRenderer::CheckValidationLayerSupport()
 	// Try to see if requested enumeration layers [in Helper.h] is present in available 
 	// validation layers. 
 	bool layerFound = false;
-	for (int i = 0; i < Helper::Vulkan::g_strValidationLayers.size(); ++i)
+	for (int i = 0; i < Vulkan::g_strValidationLayers.size(); ++i)
 	{
 		for (int j = 0; j < layerCount; ++j)
 		{
-			if (strcmp(Helper::Vulkan::g_strValidationLayers[i], vecAvailableLayers[j].layerName) == 0)
+			if (strcmp(Vulkan::g_strValidationLayers[i], vecAvailableLayers[j].layerName) == 0)
 			{
 				layerFound = true;
 
-				std::string msg = std::string(Helper::Vulkan::g_strValidationLayers[i]) + " validation layer found!";
+				std::string msg = std::string(Vulkan::g_strValidationLayers[i]) + " validation layer found!";
 				LOG_DEBUG(msg.c_str());
 			}
 		}
@@ -320,9 +320,9 @@ void VulkanRenderer::RecordCommands(uint32_t currentImage)
 //---------------------------------------------------------------------------------------------------------------------
 void VulkanRenderer::CreateSyncObjects()
 {
-	m_vecSemaphoreImageAvailable.resize(Helper::App::MAX_FRAME_DRAWS);
-	m_vecSemaphoreRenderFinished.resize(Helper::App::MAX_FRAME_DRAWS);
-	m_vecFencesRender.resize(Helper::App::MAX_FRAME_DRAWS);
+	m_vecSemaphoreImageAvailable.resize(App::MAX_FRAME_DRAWS);
+	m_vecSemaphoreRenderFinished.resize(App::MAX_FRAME_DRAWS);
+	m_vecFencesRender.resize(App::MAX_FRAME_DRAWS);
 
 	// Semaphore create information
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
@@ -336,7 +336,7 @@ void VulkanRenderer::CreateSyncObjects()
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 	fenceCreateInfo.pNext = nullptr;
 
-	for (uint32_t i = 0; i < Helper::App::MAX_FRAME_DRAWS; ++i)
+	for (uint32_t i = 0; i < App::MAX_FRAME_DRAWS; ++i)
 	{
 		// Semaphore Image Available
 		VKRESULT_CHECK_INFO(vkCreateSemaphore(m_pDevice->m_vkLogicalDevice, &semaphoreCreateInfo, nullptr, &m_vecSemaphoreImageAvailable[i]),
@@ -358,7 +358,7 @@ void VulkanRenderer::CreateSyncObjects()
 //---------------------------------------------------------------------------------------------------------------------
 void VulkanRenderer::SetupDebugMessenger()
 {
-	if (!Helper::Vulkan::g_bEnableValidationLayer)
+	if (!Vulkan::g_bEnableValidationLayer)
 		return;
 
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
@@ -390,7 +390,7 @@ void VulkanRenderer::CleanupOnWindowResize()
 void VulkanRenderer::Cleanup()
 {
 	// Destroy semaphores
-	for (uint32_t i = 0; i < Helper::App::MAX_FRAME_DRAWS; ++i)
+	for (uint32_t i = 0; i < App::MAX_FRAME_DRAWS; ++i)
 	{
 		vkDestroySemaphore(m_pDevice->m_vkLogicalDevice, m_vecSemaphoreImageAvailable[i], nullptr);
 		vkDestroySemaphore(m_pDevice->m_vkLogicalDevice, m_vecSemaphoreRenderFinished[i], nullptr);
@@ -400,7 +400,7 @@ void VulkanRenderer::Cleanup()
 	m_pSwapChain->Cleanup(m_pDevice);
 	m_pDevice->Cleanup();
 
-	if (Helper::Vulkan::g_bEnableValidationLayer)
+	if (Vulkan::g_bEnableValidationLayer)
 	{
 		DestroyDebugUtilsMessengerEXT(m_vkInstance, m_vkDebugMessenger, nullptr);
 	}
@@ -499,5 +499,5 @@ void VulkanRenderer::SubmitAndPresentFrame()
 	}
 
 	// Get next frame 
-	m_uiCurrentFrame = (m_uiCurrentFrame + 1) % Helper::App::MAX_FRAME_DRAWS;
+	m_uiCurrentFrame = (m_uiCurrentFrame + 1) % App::MAX_FRAME_DRAWS;
 }

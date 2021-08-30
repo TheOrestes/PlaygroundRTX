@@ -77,7 +77,7 @@ void DummySkybox::Render(VulkanDevice* pDevice, VkCommandBuffer cmdBuffer)
 void DummySkybox::CreateVertexBuffer(VulkanDevice* pDevice)
 {
 	// Get the size of buffer needed for vertices
-	VkDeviceSize bufferSize = 8 * sizeof(Helper::App::VertexP);
+	VkDeviceSize bufferSize = 8 * sizeof(App::VertexP);
 
 	// Temporary buffer to "stage" vertex data before transferring to GPU
 	VkBuffer stagingBuffer;

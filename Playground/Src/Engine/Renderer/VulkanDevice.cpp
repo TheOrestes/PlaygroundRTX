@@ -112,18 +112,18 @@ bool VulkanDevice::CheckDeviceExtensionSupport(VkPhysicalDevice device)
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, m_vecSupportedExtensions.data());
 
 	// Compare Required extensions with supported extensions...
-	for (int i = 0; i < Helper::Vulkan::g_strDeviceExtensions.size(); ++i)
+	for (int i = 0; i < Vulkan::g_strDeviceExtensions.size(); ++i)
 	{
 		bool bExtensionFound = false;
 
 		for (int j = 0; j < extensionCount; ++j)
 		{
 			// If device supported extensions matches the one we want, good news ... Enumarate them!
-			if (strcmp(Helper::Vulkan::g_strDeviceExtensions[i], m_vecSupportedExtensions[j].extensionName) == 0)
+			if (strcmp(Vulkan::g_strDeviceExtensions[i], m_vecSupportedExtensions[j].extensionName) == 0)
 			{
 				bExtensionFound = true;
 
-				std::string msg = std::string(Helper::Vulkan::g_strDeviceExtensions[i]) + " device extension found!";
+				std::string msg = std::string(Vulkan::g_strDeviceExtensions[i]) + " device extension found!";
 				LOG_DEBUG(msg.c_str());
 
 				break;
@@ -237,16 +237,16 @@ void VulkanDevice::CreateLogicalDevice()
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 
 	// These are part of Vulkan Instance from 1.1 & deprecated as part of logical device!
-	createInfo.enabledExtensionCount = Helper::Vulkan::g_strDeviceExtensions.size();
-	createInfo.ppEnabledExtensionNames = Helper::Vulkan::g_strDeviceExtensions.data();
+	createInfo.enabledExtensionCount = Vulkan::g_strDeviceExtensions.size();
+	createInfo.ppEnabledExtensionNames = Vulkan::g_strDeviceExtensions.data();
 
 	createInfo.pEnabledFeatures = &deviceFeatures;
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-	if (Helper::Vulkan::g_bEnableValidationLayer)
+	if (Vulkan::g_bEnableValidationLayer)
 	{
-		createInfo.enabledLayerCount = Helper::Vulkan::g_strValidationLayers.size();
-		createInfo.ppEnabledLayerNames = Helper::Vulkan::g_strValidationLayers.data();
+		createInfo.enabledLayerCount = Vulkan::g_strValidationLayers.size();
+		createInfo.ppEnabledLayerNames = Vulkan::g_strValidationLayers.data();
 	}
 	else
 	{
@@ -345,7 +345,7 @@ void VulkanDevice::CreateBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags buff
 	if (vkCreateBuffer(m_vkLogicalDevice, &bufferInfo, nullptr, outBuffer) != VK_SUCCESS)
 		LOG_ERROR("Failed to create Vertex Buffer");
 
-	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(*outBuffer), (debugName + "_buffer"));
+	Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(*outBuffer), (debugName + "_buffer"));
 
 	// GET BUFFER MEMORY REQUIREMENTS
 	VkMemoryRequirements	memRequirements;
@@ -370,7 +370,7 @@ void VulkanDevice::CreateBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags buff
 	if (vkAllocateMemory(m_vkLogicalDevice, &memoryAllocInfo, nullptr, outBufferMemory) != VK_SUCCESS)
 		LOG_ERROR("Failed to allocated Vertex Buffer Memory!");
 
-	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(*outBufferMemory), (debugName + "_deviceMemory"));
+	Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(*outBufferMemory), (debugName + "_deviceMemory"));
 
 	// Allocate memory to given Vertex buffer
 	vkBindBufferMemory(m_vkLogicalDevice, *outBuffer, *outBufferMemory, 0);
@@ -392,7 +392,7 @@ void VulkanDevice::CreateBufferAndCopyData(VkDeviceSize bufferSize, VkBufferUsag
 	if (vkCreateBuffer(m_vkLogicalDevice, &bufferInfo, nullptr, outBuffer) != VK_SUCCESS)
 		LOG_ERROR("Failed to create Vertex Buffer");
 
-	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(*outBuffer), (debugName + "_buffer"));
+	Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(*outBuffer), (debugName + "_buffer"));
 
 	// GET BUFFER MEMORY REQUIREMENTS
 	VkMemoryRequirements	memRequirements;
@@ -417,7 +417,7 @@ void VulkanDevice::CreateBufferAndCopyData(VkDeviceSize bufferSize, VkBufferUsag
 	if (vkAllocateMemory(m_vkLogicalDevice, &memoryAllocInfo, nullptr, outBufferMemory) != VK_SUCCESS)
 		LOG_ERROR("Failed to allocated Vertex Buffer Memory!");
 
-	Helper::Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(*outBufferMemory), (debugName + "_deviceMemory"));
+	Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(*outBufferMemory), (debugName + "_deviceMemory"));
 
 	// If a pointer to the buffer data has been passed, map the buffer & copy over the data!
 	if (inData != nullptr)

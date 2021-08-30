@@ -15,44 +15,16 @@ class VulkanGraphicsPipeline;
 class Scene;
 
 //-----------------------------------------------------------------------------------------------------------------------
-// Holds data for a ray tracing scratch buffer used as temp storage!
-struct RayTracingScratchBuffer
-{
-    uint64_t deviceAddress = 0;
-    VkBuffer handle = VK_NULL_HANDLE;
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-};
-
-//-----------------------------------------------------------------------------------------------------------------------
-// Ray tracing Acceleration Structure!
-struct AccelerationStructure
-{
-    VkAccelerationStructureKHR handle = VK_NULL_HANDLE;
-    uint64_t deviceAddress = 0;
-    VkBuffer buffer = VK_NULL_HANDLE;
-    VkDeviceMemory memory = VK_NULL_HANDLE;
-};
-
-//-----------------------------------------------------------------------------------------------------------------------
-struct StorageImage
-{
-    VkDeviceMemory  memory;
-    VkImage         image;
-    VkImageView     imageView;
-    VkFormat        format;
-};
-
-//-----------------------------------------------------------------------------------------------------------------------
-struct UniformData
+struct RTUniformData
 {
     glm::mat4       view;
     glm::mat4       projection;
 };
 
 //---------------------------------------------------------------------------------------------------------------------
-struct ShaderUniformsRT
+struct RTShaderUniforms
 {
-    ShaderUniformsRT() {}
+    RTShaderUniforms() {}
 
     void								CreateBuffer(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain);
 
@@ -61,11 +33,10 @@ struct ShaderUniformsRT
     void								Cleanup(VulkanDevice* pDevice);
     void								CleanupOnWindowResize(VulkanDevice* pDevice);
 
-    UniformData							shaderData;
+    RTUniformData						uniformData;
 
     // Vulkan Specific
-    VkBuffer				            vkBuffer;
-    VkDeviceMemory          			vkDeviceMemory;
+    Vulkan::Buffer                      uniformDataBuffer;
 };
 
 //-----------------------------------------------------------------------------------------------------------------------
@@ -100,7 +71,6 @@ public:
 public:
     PFN_vkGetBufferDeviceAddressKHR                     vkGetBufferDeviceAddressKHR;
     PFN_vkCreateAccelerationStructureKHR                vkCreateAccelerationStructureKHR;
-    PFN_vkDestroyAccelerationStructureKHR               vkDestroyAccelerationStructureKHR;
     PFN_vkGetAccelerationStructureBuildSizesKHR         vkGetAccelerationStructureBuildSizesKHR;
     PFN_vkGetAccelerationStructureDeviceAddressKHR      vkGetAccelerationStructureDeviceAddressKHR;
     PFN_vkCmdBuildAccelerationStructuresKHR             vkCmdBuildAccelerationStructuresKHR;
@@ -122,48 +92,40 @@ private:
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR       m_vkRayTracingPipelineFeaturesEnabled;
     VkPhysicalDeviceAccelerationStructureFeaturesKHR    m_vkRayTracingAccelerationStructureFeaturesEnabled;
 
-    AccelerationStructure                               m_vkBottomLevelAS;
-    AccelerationStructure                               m_vkTopLevelAS;
-    StorageImage                                        m_vkStorageImage;
+    Vulkan::RTAccelerationStructure                     m_BottomLevelAS;
+    Vulkan::RTAccelerationStructure                     m_TopLevelAS;
+    Vulkan::RTStorageImage                              m_StorageImage;
 
-    ShaderUniformsRT*                                   m_pShaderUniformsRT;
+    RTShaderUniforms*                                   m_pShaderUniformsRT;
 
 
 private:
     
-    RayTracingScratchBuffer                             CreateScratchBuffer(VkDeviceSize size);
+    Vulkan::RTScratchBuffer                             CreateScratchBuffer(VkDeviceSize size);
     void                                                CreateStorageImage();
-    void                                                DeleteScratchBuffer(RayTracingScratchBuffer& buffer);
 
 private:
     // Vertetx Buffer
-    VkBuffer                                            m_vkVertexBuffer;
-    VkDeviceMemory                                      m_vkVertexBufferDeviceMemory;
+    Vulkan::Buffer                                      m_VertexBuffer;
 
     // Index Buffer
+    Vulkan::Buffer                                      m_IndexBuffer;
     uint32_t                                            m_uiIndexCount;
-    VkBuffer                                            m_vkIndexBuffer;
-    VkDeviceMemory                                      m_vkIndexBufferDeviceMemory;
 
     // Transform Buffer
-    VkBuffer                                            m_vkTransformBuffer;
-    VkDeviceMemory                                      m_vkTransformBufferDeviceMemory;
+    Vulkan::Buffer                                      m_TransformBuffer;
 
     // RayGen shader binding table
-    VkBuffer                                            m_vkRaygenShaderBindingTable;
-    VkDeviceMemory                                      m_vkRaygenShaderBindingTableDeviceMemory;
+    Vulkan::Buffer                                      m_RaygenShaderBindingTable;
 
     // Miss shader binding table
-    VkBuffer                                            m_vkMissShaderBindingTable;
-    VkDeviceMemory                                      m_vkMissShaderBindingTableDeviceMemory;
+    Vulkan::Buffer                                      m_MissShaderBindingTable;
 
     // Hit shader binding table
-    VkBuffer                                            m_vkHitShaderBindingTable;
-    VkDeviceMemory                                      m_vkHitShaderBindingTableDeviceMemory;
+    Vulkan::Buffer                                      m_HitShaderBindingTable;
     
     // Uniform data buffer
-    VkBuffer                                            m_vkUniformBuffer;
-    VkDeviceMemory                                      m_vkUniformBufferDeviceMemory;
+    Vulkan::Buffer                                      m_UniformDataBuffer;
 
     std::vector<VkRayTracingShaderGroupCreateInfoKHR>   m_vecRayTracingShaderGroupsCreateInfos;
     std::vector<VkShaderModule>                         m_vecShaderModules;

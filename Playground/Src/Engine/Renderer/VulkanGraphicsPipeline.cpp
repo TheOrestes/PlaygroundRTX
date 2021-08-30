@@ -169,13 +169,13 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 				m_strVertexShader = "Assets/Shaders/GBuffer.vert.spv";
 				m_strFragmentShader = "Assets/Shaders/GBuffer.frag.spv";
 
-				vertShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
-				fragShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
+				vertShaderModule = Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
+				fragShaderModule = Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
 
 				//--- How the data for the single vertex (including info such as Position, color, texcoords etc.) is as a whole
 				VkVertexInputBindingDescription bindingDescription = {};
 				bindingDescription.binding = 0; // can bind multiple stream of data, this defines which one?
-				bindingDescription.stride = sizeof(Helper::App::VertexPNTBT); // size of single vertex object
+				bindingDescription.stride = sizeof(App::VertexPNTBT); // size of single vertex object
 				bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 				// How to move between data after each vertex
 				// VK_VERTEX_INPUT_RATE_VERTEX : move on to the next vertex																							// VK_VERTEX_INPUT_RATE_INSTANCE: move on to a vertex of next instance.
@@ -187,32 +187,32 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 				attributeDescriptions[0].location = 0; // location in shader where data will be read from
 				attributeDescriptions[0].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
 				// format the data will take (also helps define size of the data)
-				attributeDescriptions[0].offset = offsetof(Helper::App::VertexPNTBT, Position);
+				attributeDescriptions[0].offset = offsetof(App::VertexPNTBT, Position);
 				// where this attribute is defined in the data for a single vertex
 
 				// Normal attribute
 				attributeDescriptions[1].binding = 0;
 				attributeDescriptions[1].location = 1;
 				attributeDescriptions[1].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
-				attributeDescriptions[1].offset = offsetof(Helper::App::VertexPNTBT, Normal);
+				attributeDescriptions[1].offset = offsetof(App::VertexPNTBT, Normal);
 
 				// Tangent attribute
 				attributeDescriptions[2].binding = 0;
 				attributeDescriptions[2].location = 2;
 				attributeDescriptions[2].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
-				attributeDescriptions[2].offset = offsetof(Helper::App::VertexPNTBT, Tangent);
+				attributeDescriptions[2].offset = offsetof(App::VertexPNTBT, Tangent);
 
 				// BiNormal attribute
 				attributeDescriptions[3].binding = 0;
 				attributeDescriptions[3].location = 3;
 				attributeDescriptions[3].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
-				attributeDescriptions[3].offset = offsetof(Helper::App::VertexPNTBT, BiNormal);
+				attributeDescriptions[3].offset = offsetof(App::VertexPNTBT, BiNormal);
 
 				// Texture attribute
 				attributeDescriptions[4].binding = 0;
 				attributeDescriptions[4].location = 4;
 				attributeDescriptions[4].format = VkFormat::VK_FORMAT_R32G32_SFLOAT;
-				attributeDescriptions[4].offset = offsetof(Helper::App::VertexPNTBT, UV);
+				attributeDescriptions[4].offset = offsetof(App::VertexPNTBT, UV);
 
 				// Vertex Input
 				vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -264,13 +264,13 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 			m_strVertexShader = "Assets/Shaders/HDRISkydome.vert.spv";
 			m_strFragmentShader = "Assets/Shaders/HDRISkydome.frag.spv";
 
-			vertShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
-			fragShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
+			vertShaderModule = Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
+			fragShaderModule = Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
 
 			//--- How the data for the single vertex (including info such as Position, color, texcoords etc.) is as a whole
 			VkVertexInputBindingDescription bindingDescription = {};
 			bindingDescription.binding = 0; // can bind multiple stream of data, this defines which one?
-			bindingDescription.stride = sizeof(Helper::App::VertexPNT); // size of single vertex object
+			bindingDescription.stride = sizeof(App::VertexPNT); // size of single vertex object
 			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 			std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions;
@@ -280,20 +280,20 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 			attributeDescriptions[0].location = 0; // location in shader where data will be read from
 			attributeDescriptions[0].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
 			// format the data will take (also helps define size of the data)
-			attributeDescriptions[0].offset = offsetof(Helper::App::VertexPNT, Position);
+			attributeDescriptions[0].offset = offsetof(App::VertexPNT, Position);
 			// where this attribute is defined in the data for a single vertex
 
 			// Normal attribute
 			attributeDescriptions[1].binding = 0;
 			attributeDescriptions[1].location = 1;
 			attributeDescriptions[1].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
-			attributeDescriptions[1].offset = offsetof(Helper::App::VertexPNT, Normal);
+			attributeDescriptions[1].offset = offsetof(App::VertexPNT, Normal);
 
 			// UV attribute
 			attributeDescriptions[2].binding = 0;
 			attributeDescriptions[2].location = 2;
 			attributeDescriptions[2].format = VkFormat::VK_FORMAT_R32G32_SFLOAT;
-			attributeDescriptions[2].offset = offsetof(Helper::App::VertexPNT, UV);
+			attributeDescriptions[2].offset = offsetof(App::VertexPNT, UV);
 
 			// Vertex Input
 			vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -345,8 +345,8 @@ void VulkanGraphicsPipeline::CreateGraphicsPipeline(VulkanDevice* pDevice, Vulka
 			m_strVertexShader = "Assets/Shaders/Deferred.vert.spv";
 			m_strFragmentShader = "Assets/Shaders/Deferred.frag.spv";
 
-			vertShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
-			fragShaderModule = Helper::Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
+			vertShaderModule = Vulkan::CreateShaderModule(pDevice, m_strVertexShader);
+			fragShaderModule = Vulkan::CreateShaderModule(pDevice, m_strFragmentShader);
 
 			// No vertex data for Final beauty 
 			vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

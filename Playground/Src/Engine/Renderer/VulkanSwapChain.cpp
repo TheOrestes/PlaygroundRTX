@@ -122,7 +122,7 @@ void VulkanSwapChain::CreateSwapChainImageViews(VulkanDevice* pDevice)
 
     for (uint32_t i = 0; i < m_vecSwapchainImageViews.size(); ++i)
     {
-        m_vecSwapchainImageViews[i] = Helper::Vulkan::CreateImageView(pDevice,
+        m_vecSwapchainImageViews[i] = Vulkan::CreateImageView(pDevice,
             m_vecSwapchainImages[i],
             m_vkSwapchainImageFormat,
             VK_IMAGE_ASPECT_COLOR_BIT);
@@ -220,7 +220,7 @@ VkExtent2D VulkanSwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& cap
         int width, height;
         glfwGetFramebufferSize(pWindow, &width, &height);
 
-        //VkExtent2D actualExtent = { Helper::App::WIDTH, Helper::App::HEIGHT };
+        //VkExtent2D actualExtent = { App::WIDTH, App::HEIGHT };
         VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
         actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);

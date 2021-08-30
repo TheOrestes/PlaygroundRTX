@@ -74,7 +74,7 @@ std::vector<Mesh> HDRISkydome::LoadNode(VulkanDevice* pDevice, aiNode* pNode, co
 //---------------------------------------------------------------------------------------------------------------------
 Mesh HDRISkydome::LoadMesh(VulkanDevice* pDevice, aiMesh* pMesh, const aiScene* pScene)
 {
-    std::vector<Helper::App::VertexPNT>	    vertices;
+    std::vector<App::VertexPNT>	    vertices;
 	vertices.resize(pMesh->mNumVertices);
 
     std::vector<uint32_t>					indices;

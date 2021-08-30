@@ -42,7 +42,7 @@ void VulkanTextureCUBE::CreateTextureCUBE(VulkanDevice* pDevice, std::string fil
 	CreateTextureImage(pDevice, fileName);
 
 	// Create Image View!
-	m_vkImageViewCUBE = Helper::Vulkan::CreateImageViewCUBE(	pDevice,
+	m_vkImageViewCUBE = Vulkan::CreateImageViewCUBE(	pDevice,
 																m_vkImageCUBE,
 																VK_FORMAT_R8G8B8A8_UNORM,
 																1,
@@ -64,7 +64,7 @@ void VulkanTextureCUBE::CreateTextureCubeFromHDRI(VulkanDevice* pDevice, VulkanS
 	const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
 
 	//*** Create VkImage with 6 array Layers!
-	m_vkImageCUBE = Helper::Vulkan::CreateImageCUBE(pDevice,
+	m_vkImageCUBE = Vulkan::CreateImageCUBE(pDevice,
 													512,
 													512,
 													format,
@@ -73,7 +73,7 @@ void VulkanTextureCUBE::CreateTextureCubeFromHDRI(VulkanDevice* pDevice, VulkanS
 													VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &m_vkImageMemoryCUBE);
 
 	// Create Image View!
-	m_vkImageViewCUBE = Helper::Vulkan::CreateImageViewCUBE(pDevice,
+	m_vkImageViewCUBE = Vulkan::CreateImageViewCUBE(pDevice,
 															m_vkImageCUBE,
 															format,
 															1,
@@ -190,11 +190,11 @@ std::tuple<VkImage, VkImageView, VkDeviceMemory, VkFramebuffer> VulkanTextureCUB
 	VkFramebuffer	offscreenFramebuffer;
 
 	// Color attachment
-	offscreenImage = Helper::Vulkan::CreateImage(pDevice, dimension, dimension, format, VK_IMAGE_TILING_OPTIMAL,
+	offscreenImage = Vulkan::CreateImage(pDevice, dimension, dimension, format, VK_IMAGE_TILING_OPTIMAL,
 												 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
 												 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &offscreenImageMemory);
 
-	offscreenImageView = Helper::Vulkan::CreateImageView(pDevice, offscreenImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	offscreenImageView = Vulkan::CreateImageView(pDevice, offscreenImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	// Create Framebuffer
 	VkFramebufferCreateInfo fbCreateInfo = {};
@@ -212,7 +212,7 @@ std::tuple<VkImage, VkImageView, VkDeviceMemory, VkFramebuffer> VulkanTextureCUB
 		LOG_ERROR("Failed to create offscreen framebuffer for Irradiance map!");
 	}
 
-	Helper::Vulkan::TransitionImageLayout(pDevice, offscreenImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	Vulkan::TransitionImageLayout(pDevice, offscreenImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 	return std::make_tuple(offscreenImage, offscreenImageView, offscreenImageMemory, offscreenFramebuffer);
 }
@@ -465,7 +465,7 @@ void VulkanTextureCUBE::RenderIrrandianceCUBE(VulkanDevice* pDevice, VkRenderPas
 	subresourceRange.layerCount = 6;
 
 	// Change image layout for all cubemap faces to transfer destination
-	Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, irradImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+	Vulkan::TransitionImageLayout(pDevice, cmdBuffer, irradImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
 
 	// 6 faces of irradiance map!
 	for (uint32_t f = 0; f < 6; f++)
@@ -487,7 +487,7 @@ void VulkanTextureCUBE::RenderIrrandianceCUBE(VulkanDevice* pDevice, VkRenderPas
 
 		vkCmdEndRenderPass(cmdBuffer);
 
-		Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+		Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
 		// Copy region for transfer from framebuffer to cube face
 		VkImageCopy copyRegion = {};
@@ -511,11 +511,11 @@ void VulkanTextureCUBE::RenderIrrandianceCUBE(VulkanDevice* pDevice, VkRenderPas
 		vkCmdCopyImage(cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, irradImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,&copyRegion);
 
 		// Transform framebuffer color attachment back
-		Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 
 	// Transform Irradiance map to Shader readable optimal format!
-	Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, irradImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+	Vulkan::TransitionImageLayout(pDevice, cmdBuffer, irradImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
 
 	pDevice->EndAndSubmitCommandBuffer(cmdBuffer);
 }
@@ -670,7 +670,7 @@ void VulkanTextureCUBE::RenderPrefilteredSpec(VulkanDevice* pDevice, VkRenderPas
 	subresourceRange.layerCount = 6;
 
 	// Change image layout for all cubemap faces to transfer destination
-	Helper::Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, prefilterImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+	Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, prefilterImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
 
 	for (uint32_t m = 0; m < nMipmaps; m++) 
 	{
@@ -701,7 +701,7 @@ void VulkanTextureCUBE::RenderPrefilteredSpec(VulkanDevice* pDevice, VkRenderPas
 
 			vkCmdEndRenderPass(cmdBuffer);
 
-			Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+			Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
 			// Copy region for transfer from framebuffer to cube face
 			VkImageCopy copyRegion = {};
@@ -725,12 +725,12 @@ void VulkanTextureCUBE::RenderPrefilteredSpec(VulkanDevice* pDevice, VkRenderPas
 			vkCmdCopyImage(cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prefilterImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
 			// Transform framebuffer color attachment back
-			Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+			Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 		}
 	}
 
 	// Transform Irradiance map to Shader readable optimal format!
-	Helper::Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, prefilterImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+	Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, prefilterImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
 
 	pDevice->EndAndSubmitCommandBuffer(cmdBuffer);
 }
@@ -899,7 +899,7 @@ void VulkanTextureCUBE::RenderHDRI2CUBE(VulkanDevice* pDevice, VkRenderPass rend
 	subresourceRange.layerCount = 6;
 
 	// Change image layout for all cubemap faces to transfer destination
-	Helper::Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, cubeImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
+	Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, cubeImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, subresourceRange);
 
 	// 6 faces of irradiance map!
 	for (uint32_t f = 0; f < 6; f++)
@@ -924,7 +924,7 @@ void VulkanTextureCUBE::RenderHDRI2CUBE(VulkanDevice* pDevice, VkRenderPass rend
 
 		vkCmdEndRenderPass(cmdBuffer);
 
-		Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+		Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
 		// Copy region for transfer from framebuffer to cube face
 		VkImageCopy copyRegion = {};
@@ -948,11 +948,11 @@ void VulkanTextureCUBE::RenderHDRI2CUBE(VulkanDevice* pDevice, VkRenderPass rend
 		vkCmdCopyImage(cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cubeImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
 		// Transform framebuffer color attachment back
-		Helper::Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+		Vulkan::TransitionImageLayout(pDevice, cmdBuffer, offscreenImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 
 	// Transform Irradiance map to Shader readable optimal format!
-	Helper::Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, cubeImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
+	Vulkan::TransitionImageLayoutCUBE(pDevice, cmdBuffer, cubeImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subresourceRange);
 
 	pDevice->EndAndSubmitCommandBuffer(cmdBuffer);
 }
@@ -966,7 +966,7 @@ void VulkanTextureCUBE::CreateIrradianceCUBE(VulkanDevice* pDevice, VulkanSwapCh
 	const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
 
 	//*** Create VkImage with 6 array Layers!
-	m_vkImageIRRAD = Helper::Vulkan::CreateImageCUBE(pDevice,
+	m_vkImageIRRAD = Vulkan::CreateImageCUBE(pDevice,
 													dimension,
 													dimension,
 													format, 
@@ -975,7 +975,7 @@ void VulkanTextureCUBE::CreateIrradianceCUBE(VulkanDevice* pDevice, VulkanSwapCh
 													VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &m_vkImageMemoryIRRAD);
 
 	// Create Image View!
-	m_vkImageViewIRRAD = Helper::Vulkan::CreateImageViewCUBE(pDevice,
+	m_vkImageViewIRRAD = Vulkan::CreateImageViewCUBE(pDevice,
 															m_vkImageIRRAD,
 															format,
 															1,
@@ -1023,7 +1023,7 @@ void VulkanTextureCUBE::CreatePrefilteredSpecMap(VulkanDevice* pDevice, VulkanSw
 	const uint32_t numMips = static_cast<uint32_t>(floor(log2(dim))) + 1;
 
 	// Create 6 faced cubemap image
-	m_vkImagePrefilterSpec = Helper::Vulkan::CreateImageCUBE(pDevice, 
+	m_vkImagePrefilterSpec = Vulkan::CreateImageCUBE(pDevice, 
 															 dim, dim, format, numMips,
 															 VK_IMAGE_TILING_OPTIMAL, 
 															 VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
@@ -1031,7 +1031,7 @@ void VulkanTextureCUBE::CreatePrefilteredSpecMap(VulkanDevice* pDevice, VulkanSw
 															 &m_vkImageMemoryPrefilterSpec);
 
 	// Create ImageView
-	m_vkImageViewPrefilterSpec = Helper::Vulkan::CreateImageViewCUBE(pDevice, m_vkImagePrefilterSpec, format, numMips, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_vkImageViewPrefilterSpec = Vulkan::CreateImageViewCUBE(pDevice, m_vkImagePrefilterSpec, format, numMips, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	// Create Sampler
 	m_vkSamplerPrefilterSpec = CreateTextureSampler(pDevice, numMips);
@@ -1078,14 +1078,14 @@ void VulkanTextureCUBE::CreateBrdfLUTMap(VulkanDevice* pDevice, VulkanSwapChain*
 	const uint32_t dim = dimension;
 
 	// Create LUT image
-	m_vkImageBRDF = Helper::Vulkan::CreateImage(pDevice, dim, dim, format, 
+	m_vkImageBRDF = Vulkan::CreateImage(pDevice, dim, dim, format, 
 												VK_IMAGE_TILING_OPTIMAL, 
 												VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
 												VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
 												&m_vkImageMemoryBRDF);
 
 	// Create LUT Image View
-	m_vkImageViewBRDF = Helper::Vulkan::CreateImageView(pDevice, m_vkImageBRDF, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	m_vkImageViewBRDF = Vulkan::CreateImageView(pDevice, m_vkImageBRDF, format, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	// Create Sampler
 	m_vkSamplerBRDF = CreateTextureSampler(pDevice, 1);
@@ -1284,7 +1284,7 @@ void VulkanTextureCUBE::CreateTextureImage(VulkanDevice* pDevice, std::string fi
 	}
 
 	//*** Create VkImage with 6 array Layers!
-	m_vkImageCUBE = Helper::Vulkan::CreateImageCUBE(	pDevice,
+	m_vkImageCUBE = Vulkan::CreateImageCUBE(	pDevice,
 														width,
 														height,
 														VK_FORMAT_R8G8B8A8_UNORM,
@@ -1294,16 +1294,16 @@ void VulkanTextureCUBE::CreateTextureImage(VulkanDevice* pDevice, std::string fi
 
 
 	//*** Transition image to be DST for copy operation
-	Helper::Vulkan::TransitionImageLayoutCUBE(	pDevice,
+	Vulkan::TransitionImageLayoutCUBE(	pDevice,
 												m_vkImageCUBE,
 												VK_IMAGE_LAYOUT_UNDEFINED,
 												VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	// COPY DATA TO IMAGE
-	Helper::Vulkan::CopyImageBufferCUBE(pDevice, imageStagingBuffer, m_vkImageCUBE, width, height);
+	Vulkan::CopyImageBufferCUBE(pDevice, imageStagingBuffer, m_vkImageCUBE, width, height);
 
 	// Transition image to be shader readable for shader usage
-	Helper::Vulkan::TransitionImageLayoutCUBE(	pDevice,
+	Vulkan::TransitionImageLayoutCUBE(	pDevice,
 												m_vkImageCUBE,
 												VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 												VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

@@ -39,7 +39,7 @@ void FreeCamera::Update(float dt)
 
 	// Update View & Projection matrices!
 	m_matView = glm::lookAt(m_vecPosition, m_vecPosition + m_vecForward, m_vecUp);
-	m_matProjection = glm::perspective(m_fFOV, Helper::App::WINDOW_WIDTH / Helper::App::WINDOW_HEIGHT, 0.1f, 1000.0f);
+	m_matProjection = glm::perspective(m_fFOV, App::WINDOW_WIDTH / App::WINDOW_HEIGHT, 0.1f, 1000.0f);
 }
 
 //---------------------------------------------------------------------------------------------------------------------

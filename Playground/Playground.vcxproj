@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Src\Engine\RenderObjects\RTXCube.cpp" />
     <ClCompile Include="Src\Engine\Helpers\Camera.cpp" />
     <ClCompile Include="Src\Engine\Renderer\RTXRenderer.cpp" />
     <ClCompile Include="Src\Engine\Renderer\VulkanRenderer.cpp" />
@@ -46,6 +47,7 @@
     <ClCompile Include="Src\Engine\Renderer\VulkanFrameBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Src\Engine\RenderObjects\RTXCube.h" />
     <ClInclude Include="Src\Engine\Helpers\Camera.h" />
     <ClInclude Include="Src\Engine\Renderer\RTXRenderer.h" />
     <ClInclude Include="Src\Engine\RenderObjects\HDRISkydome.h" />

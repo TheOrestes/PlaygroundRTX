@@ -52,14 +52,14 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pAlbedoAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pAlbedoAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pAlbedoAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create color buffer image
-				m_pAlbedoAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(	pDevice,
+				m_pAlbedoAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(	pDevice,
 																							pSwapChain->m_vkSwapchainExtent.width,
 																							pSwapChain->m_vkSwapchainExtent.height,
 																							m_pAlbedoAttachment->attachmentFormat,
@@ -69,7 +69,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 																							&(m_pAlbedoAttachment->vecAttachmentImageMemory[i]));
 
 				// Create color buffer image view!
-				m_pAlbedoAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(	pDevice,
+				m_pAlbedoAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(	pDevice,
 																									m_pAlbedoAttachment->vecAttachmentImage[i],
 																									m_pAlbedoAttachment->attachmentFormat,
 																									VK_IMAGE_ASPECT_COLOR_BIT);
@@ -88,14 +88,14 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pPositionAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pPositionAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pPositionAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create color buffer image
-				m_pPositionAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(pDevice,
+				m_pPositionAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(pDevice,
 					pSwapChain->m_vkSwapchainExtent.width,
 					pSwapChain->m_vkSwapchainExtent.height,
 					m_pPositionAttachment->attachmentFormat,
@@ -105,7 +105,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 					&(m_pPositionAttachment->vecAttachmentImageMemory[i]));
 
 				// Create color buffer image view!
-				m_pPositionAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(pDevice,
+				m_pPositionAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(pDevice,
 					m_pPositionAttachment->vecAttachmentImage[i],
 					m_pPositionAttachment->attachmentFormat,
 					VK_IMAGE_ASPECT_COLOR_BIT);
@@ -124,14 +124,14 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pNormalAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pNormalAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pNormalAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create Normal buffer image
-				m_pNormalAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(pDevice,
+				m_pNormalAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(pDevice,
 					pSwapChain->m_vkSwapchainExtent.width,
 					pSwapChain->m_vkSwapchainExtent.height,
 					m_pNormalAttachment->attachmentFormat,
@@ -141,7 +141,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 					&(m_pNormalAttachment->vecAttachmentImageMemory[i]));
 
 				// Create normal buffer image view!
-				m_pNormalAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(pDevice,
+				m_pNormalAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(pDevice,
 					m_pNormalAttachment->vecAttachmentImage[i],
 					m_pNormalAttachment->attachmentFormat,
 					VK_IMAGE_ASPECT_COLOR_BIT);
@@ -159,12 +159,12 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pDepthAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT };
-			m_pDepthAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+			m_pDepthAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create color buffer image
-				m_pDepthAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(pDevice,
+				m_pDepthAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(pDevice,
 					pSwapChain->m_vkSwapchainExtent.width,
 					pSwapChain->m_vkSwapchainExtent.height,
 					m_pDepthAttachment->attachmentFormat,
@@ -174,7 +174,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 					&(m_pDepthAttachment->vecAttachmentImageMemory[i]));
 
 				// Create color buffer image view!
-				m_pDepthAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(pDevice,
+				m_pDepthAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(pDevice,
 					m_pDepthAttachment->vecAttachmentImage[i],
 					m_pDepthAttachment->attachmentFormat,
 					VK_IMAGE_ASPECT_DEPTH_BIT);
@@ -192,14 +192,14 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pPBRAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pPBRAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pPBRAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create Normal buffer image
-				m_pPBRAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(	pDevice,
+				m_pPBRAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(	pDevice,
 																						pSwapChain->m_vkSwapchainExtent.width,
 																						pSwapChain->m_vkSwapchainExtent.height,
 																						m_pPBRAttachment->attachmentFormat,
@@ -209,7 +209,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 																						&(m_pPBRAttachment->vecAttachmentImageMemory[i]));
 
 				// Create normal buffer image view!
-				m_pPBRAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(	pDevice,
+				m_pPBRAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(	pDevice,
 																								m_pPBRAttachment->vecAttachmentImage[i],
 																								m_pPBRAttachment->attachmentFormat,
 																								VK_IMAGE_ASPECT_COLOR_BIT);
@@ -227,14 +227,14 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pEmissionAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pEmissionAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pEmissionAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create Normal buffer image
-				m_pEmissionAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(	pDevice,
+				m_pEmissionAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(	pDevice,
 																							pSwapChain->m_vkSwapchainExtent.width,
 																							pSwapChain->m_vkSwapchainExtent.height,
 																							m_pEmissionAttachment->attachmentFormat,
@@ -244,7 +244,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 																							&(m_pEmissionAttachment->vecAttachmentImageMemory[i]));
 
 				// Create normal buffer image view!
-				m_pEmissionAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(	pDevice,
+				m_pEmissionAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(	pDevice,
 																									m_pEmissionAttachment->vecAttachmentImage[i],
 																									m_pEmissionAttachment->attachmentFormat,
 																									VK_IMAGE_ASPECT_COLOR_BIT);
@@ -261,14 +261,14 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pBackgroundAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pBackgroundAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pBackgroundAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create Normal buffer image
-				m_pBackgroundAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(pDevice,
+				m_pBackgroundAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(pDevice,
 																							 pSwapChain->m_vkSwapchainExtent.width,
 																							 pSwapChain->m_vkSwapchainExtent.height,
 																							 m_pBackgroundAttachment->attachmentFormat,
@@ -278,7 +278,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 																							 &(m_pBackgroundAttachment->vecAttachmentImageMemory[i]));
 
 				// Create normal buffer image view!
-				m_pBackgroundAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(pDevice,
+				m_pBackgroundAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(pDevice,
 																									 m_pBackgroundAttachment->vecAttachmentImage[i],
 																									 m_pBackgroundAttachment->attachmentFormat,
 																									 VK_IMAGE_ASPECT_COLOR_BIT);
@@ -295,14 +295,14 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 			m_pObjectIDAttachment->vecAttachmentImageMemory.resize(pSwapChain->m_vecSwapchainImages.size());
 
 			std::vector<VkFormat> formats = { VK_FORMAT_B8G8R8A8_UNORM };
-			m_pObjectIDAttachment->attachmentFormat = Helper::Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
+			m_pObjectIDAttachment->attachmentFormat = Vulkan::ChooseSupportedFormats(pDevice, formats, VK_IMAGE_TILING_OPTIMAL,
 				VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
 
 
 			for (uint16_t i = 0; i < pSwapChain->m_vecSwapchainImages.size(); i++)
 			{
 				// Create Normal buffer image
-				m_pObjectIDAttachment->vecAttachmentImage[i] = Helper::Vulkan::CreateImage(pDevice,
+				m_pObjectIDAttachment->vecAttachmentImage[i] = Vulkan::CreateImage(pDevice,
 					pSwapChain->m_vkSwapchainExtent.width,
 					pSwapChain->m_vkSwapchainExtent.height,
 					m_pObjectIDAttachment->attachmentFormat,
@@ -312,7 +312,7 @@ void DeferredFrameBuffer::CreateAttachment(VulkanDevice* pDevice, VulkanSwapChai
 					&(m_pObjectIDAttachment->vecAttachmentImageMemory[i]));
 
 				// Create normal buffer image view!
-				m_pObjectIDAttachment->vecAttachmentImageView[i] = Helper::Vulkan::CreateImageView(pDevice,
+				m_pObjectIDAttachment->vecAttachmentImageView[i] = Vulkan::CreateImageView(pDevice,
 					m_pObjectIDAttachment->vecAttachmentImage[i],
 					m_pObjectIDAttachment->attachmentFormat,
 					VK_IMAGE_ASPECT_COLOR_BIT);
