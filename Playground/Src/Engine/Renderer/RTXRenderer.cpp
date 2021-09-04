@@ -55,7 +55,6 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
 
         m_vecShaderModules.clear();
         
-        //CreateBottomLevelAS();
         CreateTopLevelAS();
         CreateStorageImage();
         CreateRayTracingDescriptorSet();
@@ -122,13 +121,7 @@ void RTXRenderer::Cleanup()
     m_StorageImage.Cleanup(m_pDevice);
 
     m_pCube->Cleanup(m_pDevice);
-
-    m_BottomLevelAS.Cleanup(m_pDevice);
     m_TopLevelAS.Cleanup(m_pDevice);
-
-    m_VertexBuffer.Cleanup(m_pDevice);
-    m_IndexBuffer.Cleanup(m_pDevice);
-    m_TransformBuffer.Cleanup(m_pDevice);
 
     m_RaygenShaderBindingTable.Cleanup(m_pDevice);
     m_MissShaderBindingTable.Cleanup(m_pDevice);
@@ -298,185 +291,6 @@ void RTXRenderer::InitRayTracing()
     
     vkGetPhysicalDeviceFeatures2(m_pDevice->m_vkPhysicalDevice, &deviceFeatures2);
 }
-
-//---------------------------------------------------------------------------------------------------------------------
-// BLAS holds the actual scene geometry
-//---------------------------------------------------------------------------------------------------------------------
-void RTXRenderer::CreateBottomLevelAS()
-{
-    // 1. Mesh Data : Vertices, Indices & Transform
-    // vertex data
-    std::vector<App::VertexP> vertices;
-    vertices.reserve(3);
-
-    vertices.emplace_back(glm::vec3(1,1,0));
-    vertices.emplace_back(glm::vec3(-1,1,0));
-    vertices.emplace_back(glm::vec3(0,-1,0));
-    
-    // Index data
-    std::vector<uint32_t> indices;
-    indices.reserve(3);
-
-    indices.emplace_back(0);    indices.emplace_back(1);    indices.emplace_back(2);
-
-    // Identity transform matrix
-    VkTransformMatrixKHR transformMat = 
-    {
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0
-    };
-
-    // 2. Create buffers for Mesh Data
-    // Vertex buffer
-    m_pDevice->CreateBufferAndCopyData(vertices.size() * sizeof(App::VertexP),
-                                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &m_VertexBuffer.buffer,
-                                       &m_VertexBuffer.memory,
-                                       vertices.data(),
-                                       "BLAS_VB");
-
-    // Index buffer
-    m_pDevice->CreateBufferAndCopyData(indices.size() * sizeof(uint32_t),
-                                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &m_IndexBuffer.buffer,
-                                       &m_IndexBuffer.memory,
-                                       indices.data(),
-                                       "BLAS_IB");
-
-    // Transform buffer
-    m_pDevice->CreateBufferAndCopyData(sizeof(VkTransformMatrixKHR),
-                                       VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &m_TransformBuffer.buffer,
-                                       &m_TransformBuffer.memory,
-                                       &transformMat,
-                                       "BLAS_TB");
-
-
-
-    // 3. Get Device addresses of buffers just created
-    VkDeviceOrHostAddressConstKHR vbAddress = {};
-    VkDeviceOrHostAddressConstKHR ibAddress = {};
-    VkDeviceOrHostAddressConstKHR trAddress = {};
-    
-    vbAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_VertexBuffer.buffer);
-    ibAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_IndexBuffer.buffer);
-    trAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, m_TransformBuffer.buffer);
-
-    // 4. Define AS Geometry by providing vb, ib & tb addresses 
-    VkAccelerationStructureGeometryKHR accelStructureGeometry = {};
-    accelStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    accelStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-    accelStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-    accelStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-    accelStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-    accelStructureGeometry.geometry.triangles.vertexData = vbAddress;
-    accelStructureGeometry.geometry.triangles.maxVertex = 3;
-    accelStructureGeometry.geometry.triangles.vertexStride = sizeof(App::VertexP);
-    accelStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
-    accelStructureGeometry.geometry.triangles.indexData = ibAddress;
-    accelStructureGeometry.geometry.triangles.transformData.deviceAddress = 0;
-    accelStructureGeometry.geometry.triangles.transformData.hostAddress = nullptr;
-    accelStructureGeometry.geometry.triangles.transformData = trAddress;
-
-    // 5. Get AS Build size estimate
-    VkAccelerationStructureBuildGeometryInfoKHR accelStructBuildGeomInfo = {};
-    accelStructBuildGeomInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    accelStructBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    accelStructBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    accelStructBuildGeomInfo.geometryCount = 1;
-    accelStructBuildGeomInfo.pGeometries = &accelStructureGeometry;
-
-    const uint32_t nTriangles = 1;
-    VkAccelerationStructureBuildSizesInfoKHR accelStructBuildSizesInfo = {};
-    accelStructBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-    
-    vkGetAccelerationStructureBuildSizesKHR(m_pDevice->m_vkLogicalDevice, 
-                                            VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-                                            &accelStructBuildGeomInfo,
-                                            &nTriangles,
-                                            &accelStructBuildSizesInfo);
-
-    // 6. Create buffer for holding AS and Create AS handle!
-    m_pDevice->CreateBuffer(accelStructBuildSizesInfo.accelerationStructureSize,
-                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                            VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
-                            &m_BottomLevelAS.buffer,
-                            &m_BottomLevelAS.memory,
-                            "BLAS_AS");
-
-    VkAccelerationStructureCreateInfoKHR accelStructCreateInfo = {};
-    accelStructCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-    accelStructCreateInfo.buffer = m_BottomLevelAS.buffer;
-    accelStructCreateInfo.size = accelStructBuildSizesInfo.accelerationStructureSize;
-    accelStructCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-
-    VKRESULT_CHECK_INFO(vkCreateAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, 
-                                                         &accelStructCreateInfo, 
-                                                         nullptr, 
-                                                         &m_BottomLevelAS.handle),
-                        "Failed to create BLAS",
-                        "Successfully created BLAS!");
-
-    // 7. Create a small scratch buffer used during build of BLAS
-    Vulkan::RTScratchBuffer scratchBuffer = CreateScratchBuffer(accelStructBuildSizesInfo.buildScratchSize);
-
-    VkAccelerationStructureBuildGeometryInfoKHR accelStructBuildGeomInfo2 = {};
-    accelStructBuildGeomInfo2.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-    accelStructBuildGeomInfo2.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    accelStructBuildGeomInfo2.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    accelStructBuildGeomInfo2.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-    accelStructBuildGeomInfo2.dstAccelerationStructure = m_BottomLevelAS.handle;
-    accelStructBuildGeomInfo2.geometryCount = 1;
-    accelStructBuildGeomInfo2.pGeometries = &accelStructureGeometry;
-    accelStructBuildGeomInfo2.scratchData.deviceAddress = scratchBuffer.deviceAddress;
-
-    VkAccelerationStructureBuildRangeInfoKHR accelStructBuildRangeInfo = {};
-    accelStructBuildRangeInfo.primitiveCount = nTriangles;
-    accelStructBuildRangeInfo.primitiveOffset = 0;
-    accelStructBuildRangeInfo.firstVertex = 0;
-    accelStructBuildRangeInfo.transformOffset = 0;
-
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR*> vecAccelStructRangeInfos;
-    vecAccelStructRangeInfos.push_back(&accelStructBuildRangeInfo);
-
-    // 8. Create AS either on CPU or GPU depending on the feature availability!
-    if (m_vkRayTracingAccelerationStructureFeaturesEnabled.accelerationStructureHostCommands)
-    {
-        // Implementation supports building Accel Struct on Host!
-        VKRESULT_CHECK_INFO(vkBuildAccelerationStructuresKHR(m_pDevice->m_vkLogicalDevice,
-                                                             VK_NULL_HANDLE,
-                                                             static_cast<uint32_t>(vecAccelStructRangeInfos.size()),
-                                                             &accelStructBuildGeomInfo2,
-                                                             vecAccelStructRangeInfos.data()),
-                            "On-Host BLAS failed to build",
-                            "On-Host BLAS built successfully!");
-    }
-    else
-    {
-        VkCommandBuffer commandBuffer = m_pDevice->BeginCommandBuffer();
-
-         // Accel Struct needs to be built on Device!
-        vkCmdBuildAccelerationStructuresKHR(commandBuffer,
-                                            static_cast<uint32_t>(vecAccelStructRangeInfos.size()),
-                                            &accelStructBuildGeomInfo2,
-                                            vecAccelStructRangeInfos.data()),
-        
-        m_pDevice->EndAndSubmitCommandBuffer(commandBuffer);
-    }
-
-    // 9. Finally, get hold of device address of BLAS!
-    VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
-    accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-    accelerationDeviceAddressInfo.accelerationStructure = m_BottomLevelAS.handle;
-    m_BottomLevelAS.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->m_vkLogicalDevice, &accelerationDeviceAddressInfo);
-
-    // 10. Scratch buffer no lonoger needed!
-    scratchBuffer.Cleanup(m_pDevice);
-}                                   
 
 //---------------------------------------------------------------------------------------------------------------------
 // TLAS holds scene's object instances

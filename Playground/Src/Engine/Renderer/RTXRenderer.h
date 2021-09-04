@@ -59,7 +59,6 @@ public:
                                                         
     // RTX                                              
     void							                    InitRayTracing();
-    void							                    CreateBottomLevelAS();
     void							                    CreateTopLevelAS();
     void							                    CreateRayTracingDescriptorSet();
     void							                    CreateRayTracingGraphicsPipeline();
@@ -95,16 +94,7 @@ private:
     void                                                CreateStorageImage();
 
 private:
-    // Vertetx Buffer
-    Vulkan::Buffer                                      m_VertexBuffer;
-
-    // Index Buffer
-    Vulkan::Buffer                                      m_IndexBuffer;
-    uint32_t                                            m_uiIndexCount;
-
-    // Transform Buffer
-    Vulkan::Buffer                                      m_TransformBuffer;
-
+   
     RTXCube*                                            m_pCube;
 
     // RayGen shader binding table

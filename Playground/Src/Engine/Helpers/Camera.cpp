@@ -13,11 +13,11 @@ Camera::Camera()
     m_fNearClip = 0.01f;
     m_fFarClip = 10000.0f;
     m_vecCameraPositionDelta = glm::vec3(0);
-    m_fCameraScale = 0.5f;
-    m_fMaxPitchRate = 1.0f;
-    m_fMaxYawRate = 1.0f;
+    m_fCameraScale = 0.1f;
+    m_fMaxPitchRate = 0.01f;
+    m_fMaxYawRate = 0.01f;
 
-    m_vecCameraPosition = glm::vec3(0,0,5);
+    m_vecCameraPosition = glm::vec3(0,2,5);
     m_vecCameraLookAt = glm::vec3(0);
 }
 
@@ -38,6 +38,7 @@ void Camera::Update(float dt)
     m_vecCameraDirection = glm::normalize(m_vecCameraLookAt - m_vecCameraPosition);     
 
     m_matProjection = glm::perspective(m_fFOV, m_fAspect, m_fNearClip, m_fFarClip);
+    m_matProjection[1][1] *= -1.0f;
 
     // determine axis for pitch rotation
     glm::vec3 pitchAxis = glm::cross(m_vecCameraDirection, m_vecCameraUp);
@@ -127,7 +128,7 @@ void Camera::ChangePitch(float degrees)
         degrees = m_fMaxPitchRate;
     }
 
-    m_fCameraPitch -= degrees;
+    m_fCameraPitch += degrees;
 
     //Check bounds for the camera pitch
     if (m_fCameraPitch > 360.0f) 
@@ -182,8 +183,8 @@ void Camera::Move2D(int x, int y)
     //if the camera is moving, meaning that the mouse was clicked and dragged, change the pitch and heading
     if (m_bMoveCamera) 
     {
-        ChangeYaw(.008f * mouse_delta.x);
-        ChangePitch(.008f * mouse_delta.y);
+        ChangeYaw(.005f * mouse_delta.x);
+        ChangePitch(.005f * mouse_delta.y);
     }
 
     m_vecMousePosition = glm::vec3(x, y, 0);
