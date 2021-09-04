@@ -4,6 +4,9 @@
 #include "PlaygroundHeaders.h"
 
 #include "glm/glm.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+
 #include "vulkan/vulkan.h"
 
 #include "Engine/Helpers/Log.h"
@@ -1544,3 +1547,115 @@ namespace Vulkan
 		}
 }
 
+
+//-----------------------------------------------------------------------------------------------------------------
+static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
+	const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+	const VkAllocationCallbacks* pAllocator,
+	VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+
+	if (func != nullptr)
+	{
+		return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+	}
+	else
+	{
+		return VK_ERROR_EXTENSION_NOT_PRESENT;
+	}
+}
+
+//-----------------------------------------------------------------------------------------------------------------
+static void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+	VkDebugUtilsMessengerEXT debugMessenger,
+	const VkAllocationCallbacks* pAllocator)
+{
+	auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+
+	if (func != nullptr)
+	{
+		func(instance, debugMessenger, pAllocator);
+	}
+}
+
+//-----------------------------------------------------------------------------------------------------------------
+//static VkDeviceAddress vkGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo)
+//{
+//	auto func = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(device, "vkGetBufferDeviceAddressKHR");
+//
+//	if (func != nullptr)
+//	{
+//		return func(device, pInfo);
+//	}
+//	else
+//	{
+//		return 0;
+//	}
+//}
+//
+////-----------------------------------------------------------------------------------------------------------------
+//static VkResult vkCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, 
+//												 const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure)
+//{
+//	auto func = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(device, "vkCreateAccelerationStructureKHR");
+//
+//	if (func != nullptr)
+//	{
+//		return func(device, pCreateInfo, pAllocator, pAccelerationStructure);
+//	}
+//	else
+//	{
+//		return VK_ERROR_EXTENSION_NOT_PRESENT;
+//	}
+//}
+//
+////-----------------------------------------------------------------------------------------------------------------
+//static void vkGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, 
+//													const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo, 
+//													const uint32_t* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo)
+//{
+//	auto func = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(device, "vkGetAccelerationStructureBuildSizesKHR");
+//
+//	if (func != nullptr)
+//	{
+//		func(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
+//	}
+//}
+////-----------------------------------------------------------------------------------------------------------------
+//static VkDeviceAddress vkGetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo)
+//{
+//	auto func = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(device, "vkGetAccelerationStructureDeviceAddressKHR");
+//
+//	if (func != nullptr)
+//	{
+//		return func(device, pInfo);
+//	}
+//	else
+//	{
+//		return 0;
+//	}
+//}
+////-----------------------------------------------------------------------------------------------------------------
+//static void vkCmdBuildAccelerationStructuresKHR(VkInstance instance, VkCommandBuffer commandBuffer, uint32_t infoCount,
+//												const VkAccelerationStructureBuildGeometryInfoKHR* pInfos,
+//												const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+//{
+//	auto func = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetInstanceProcAddr(instance, "vkCmdBuildAccelerationStructuresKHR");
+//
+//	if (func != nullptr)
+//	{
+//		func(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
+//	}
+//}
+
+//-----------------------------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------------------------
+//PFN_vkCmdTraceRaysKHR                               vkCmdTraceRaysKHR;
+//PFN_vkGetRayTracingShaderGroupHandlesKHR            vkGetRayTracingShaderGroupHandlesKHR;
+//PFN_vkCreateRayTracingPipelinesKHR                  vkCreateRayTracingPipelinesKHR;

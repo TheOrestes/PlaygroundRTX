@@ -13,6 +13,7 @@ class VulkanSwapChain;
 class VulkanFrameBuffer;
 class VulkanGraphicsPipeline;
 class Scene;
+class RTXCube;
 
 //-----------------------------------------------------------------------------------------------------------------------
 struct RTUniformData
@@ -55,10 +56,6 @@ public:
                                                         
     virtual void					                    HandleWindowResize() override;
     virtual void					                    CleanupOnWindowResize() override;
-
-    //void                                                SetupDepthStencil();
-    //void                                                SetupRenderPass();
-    //void                                                SetupFramebuffer();
                                                         
     // RTX                                              
     void							                    InitRayTracing();
@@ -68,7 +65,7 @@ public:
     void							                    CreateRayTracingGraphicsPipeline();
     void							                    CreateRayTracingBindingTable();
 
-public:
+private:
     PFN_vkGetBufferDeviceAddressKHR                     vkGetBufferDeviceAddressKHR;
     PFN_vkCreateAccelerationStructureKHR                vkCreateAccelerationStructureKHR;
     PFN_vkGetAccelerationStructureBuildSizesKHR         vkGetAccelerationStructureBuildSizesKHR;
@@ -80,16 +77,10 @@ public:
     PFN_vkCreateRayTracingPipelinesKHR                  vkCreateRayTracingPipelinesKHR;
                                                         
 private:                                                
-                                                        
-    VkDeviceSize                                        m_vkBufferSize;
-    VkBuffer                                            m_vkBufferImage;
-    VkDeviceMemory                                      m_vkDeviceMemoryImage;
 
     // RTX
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR     m_vkRayTracingPipelineProperties;
     VkPhysicalDeviceAccelerationStructureFeaturesKHR    m_vkRayTracingAccelerationStructureFeatures;
-    VkPhysicalDeviceBufferDeviceAddressFeatures         m_vkBufferDeviceAddressFeaturesEnabled;
-    VkPhysicalDeviceRayTracingPipelineFeaturesKHR       m_vkRayTracingPipelineFeaturesEnabled;
     VkPhysicalDeviceAccelerationStructureFeaturesKHR    m_vkRayTracingAccelerationStructureFeaturesEnabled;
 
     Vulkan::RTAccelerationStructure                     m_BottomLevelAS;
@@ -97,7 +88,6 @@ private:
     Vulkan::RTStorageImage                              m_StorageImage;
 
     RTShaderUniforms*                                   m_pShaderUniformsRT;
-
 
 private:
     
@@ -115,6 +105,8 @@ private:
     // Transform Buffer
     Vulkan::Buffer                                      m_TransformBuffer;
 
+    RTXCube*                                            m_pCube;
+
     // RayGen shader binding table
     Vulkan::Buffer                                      m_RaygenShaderBindingTable;
 
@@ -123,9 +115,6 @@ private:
 
     // Hit shader binding table
     Vulkan::Buffer                                      m_HitShaderBindingTable;
-    
-    // Uniform data buffer
-    Vulkan::Buffer                                      m_UniformDataBuffer;
 
     std::vector<VkRayTracingShaderGroupCreateInfoKHR>   m_vecRayTracingShaderGroupsCreateInfos;
     std::vector<VkShaderModule>                         m_vecShaderModules;

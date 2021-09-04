@@ -6,6 +6,7 @@
 #include "VulkanGraphicsPipeline.h"
 #include "Engine/RenderObjects/HDRISkydome.h"
 #include "Engine/Scene.h"      
+#include "Engine/RenderObjects/RTXCube.h"
 #include "Engine/Helpers/Camera.h"
 #include "Engine/ImGui/UIManager.h"
 
@@ -46,12 +47,15 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
         //m_pScene = new Scene();
         //m_pScene->LoadScene(m_pDevice, m_pSwapChain);
 
+        m_pCube = new RTXCube();
+        m_pCube->Initialize(m_pDevice);
+
         m_pShaderUniformsRT = new RTShaderUniforms();
         m_pShaderUniformsRT->CreateBuffer(m_pDevice, m_pSwapChain);
 
         m_vecShaderModules.clear();
         
-        CreateBottomLevelAS();
+        //CreateBottomLevelAS();
         CreateTopLevelAS();
         CreateStorageImage();
         CreateRayTracingDescriptorSet();
@@ -116,6 +120,8 @@ void RTXRenderer::Cleanup()
     }
 
     m_StorageImage.Cleanup(m_pDevice);
+
+    m_pCube->Cleanup(m_pDevice);
 
     m_BottomLevelAS.Cleanup(m_pDevice);
     m_TopLevelAS.Cleanup(m_pDevice);
@@ -491,7 +497,7 @@ void RTXRenderer::CreateTopLevelAS()
     accelStructInstance.mask = 0xFF;
     accelStructInstance.instanceShaderBindingTableRecordOffset = 0;
     accelStructInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-    accelStructInstance.accelerationStructureReference = m_BottomLevelAS.deviceAddress;
+    accelStructInstance.accelerationStructureReference = m_pCube->m_BottomLevelAS.deviceAddress; //m_BottomLevelAS.deviceAddress;
 
     // Buffer for instance data
     Vulkan::Buffer instanceBuffer;
