@@ -257,6 +257,69 @@ namespace Vulkan
 		VkMemoryPropertyFlags	memPropertyFlags;
 	};
 
+	//-----------------------------------------------------------------------------------------------------------------------
+	// Mesh Data
+	struct MeshData
+	{
+		MeshData()
+		{
+			numVertices = 0;
+			numIndices = 0;
+		}
+
+		void Cleanup(VulkanDevice* pDevice)
+		{
+			vertexBuffer.Cleanup(pDevice);
+			indexBuffer.Cleanup(pDevice);
+		}	
+
+		uint32_t	numVertices;
+		uint32_t	numIndices;
+		Buffer		vertexBuffer;
+		Buffer		indexBuffer;
+	};
+
+	//-----------------------------------------------------------------------------------------------------------------------
+	// Mesh Instance
+	struct MeshInstance
+	{
+		MeshInstance()
+		{
+			meshIndex		=	0;
+			position		=	glm::vec3(0);
+			rotationAxis	=	glm::vec3(0,1,0);
+			scale			=	glm::vec3(1);
+			angle			=	0.0f;
+			transformMatrix	=	glm::mat4(1);
+			
+			verticesAddress	=	0;
+			indicesAddress	=	0;
+		}
+
+		void Update(float dt)
+		{
+			static float angle = 0.0f;
+			angle += dt;
+
+			glm::mat4 T = glm::translate(glm::mat4(1), position);
+			glm::mat4 TR = glm::rotate(T, angle, rotationAxis);
+			glm::mat4 TRS = glm::scale(TR, scale);
+
+			transformMatrix = TRS;
+		}
+		
+		uint32_t										meshIndex;
+		
+		glm::vec3                                       position;
+		glm::vec3                                       rotationAxis;
+		float                                           angle;
+		glm::vec3                                       scale;
+		glm::mat4                                       transformMatrix;
+
+		VkDeviceAddress									verticesAddress;
+		VkDeviceAddress									indicesAddress;
+	};
+
 
 	//-----------------------------------------------------------------------------------------------------------------------
 	//--- Create Shader Module

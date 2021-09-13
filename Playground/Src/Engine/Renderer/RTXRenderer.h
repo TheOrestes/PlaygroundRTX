@@ -59,13 +59,12 @@ public:
                                                         
     // RTX                                              
     void							                    InitRayTracing();
-    void							                    CreateTopLevelAS();
+    void							                    CreateTopLevelAS(bool bUpdate);
     void							                    CreateRayTracingDescriptorSet();
     void							                    CreateRayTracingGraphicsPipeline();
     void							                    CreateRayTracingBindingTable();
 
 private:
-    PFN_vkGetBufferDeviceAddressKHR                     vkGetBufferDeviceAddressKHR;
     PFN_vkCreateAccelerationStructureKHR                vkCreateAccelerationStructureKHR;
     PFN_vkGetAccelerationStructureBuildSizesKHR         vkGetAccelerationStructureBuildSizesKHR;
     PFN_vkGetAccelerationStructureDeviceAddressKHR      vkGetAccelerationStructureDeviceAddressKHR;

@@ -23,19 +23,13 @@ private:
     void                                            CreateBottomLevelAS(VulkanDevice* pDevice);
 
 private:
-    Vulkan::Buffer                                  m_VertexBuffer;
-    Vulkan::Buffer                                  m_IndexBuffer;
-    Vulkan::Buffer                                  m_TransformBuffer;
+    Vulkan::MeshData*                                m_pMeshData;
 
+    // Actual Data
     std::vector<App::VertexP>                       m_vecVertices;
     std::vector<uint32_t>                           m_vecIndices;
 
 public:
     Vulkan::RTAccelerationStructure                 m_BottomLevelAS;
-    
-    glm::vec3                                       m_Position;
-    glm::vec3                                       m_RotationAxis;
-    float                                           m_Angle;
-    glm::vec3                                       m_Scale;
-    glm::mat4                                       m_TransformMatrix;
+    Vulkan::MeshInstance*                           m_pMeshInstanceData;
 };

@@ -183,8 +183,8 @@ void Camera::Move2D(int x, int y)
     //if the camera is moving, meaning that the mouse was clicked and dragged, change the pitch and heading
     if (m_bMoveCamera) 
     {
-        ChangeYaw(.005f * mouse_delta.x);
-        ChangePitch(.005f * mouse_delta.y);
+        ChangeYaw(.003f * mouse_delta.x);
+        ChangePitch(.003f * mouse_delta.y);
     }
 
     m_vecMousePosition = glm::vec3(x, y, 0);

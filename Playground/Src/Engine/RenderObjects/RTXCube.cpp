@@ -56,17 +56,19 @@ void RTXCube::Initialize(VulkanDevice* pDevice)
     m_vecIndices[33] = 6;        m_vecIndices[34] = 2;        m_vecIndices[35] = 1;
 
     // Set defaults
-    m_Position = glm::vec3(0);
-    m_RotationAxis = glm::vec3(0,1,0);
-    m_Angle = 0.0f;
-    m_Scale = glm::vec3(1);
-
-    CreateBottomLevelAS(pDevice);
+   m_pMeshData = new Vulkan::MeshData();
+   m_pMeshInstanceData = new Vulkan::MeshInstance();
+   
+   CreateBottomLevelAS(pDevice);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void RTXCube::Update(float dt)
 {
+    static float angle = 0.0f;
+    angle += dt;
+
+    m_pMeshInstanceData->Update(dt);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -77,9 +79,7 @@ void RTXCube::Render()
 //---------------------------------------------------------------------------------------------------------------------
 void RTXCube::Cleanup(VulkanDevice* pDevice)
 {
-    m_VertexBuffer.Cleanup(pDevice);
-    m_IndexBuffer.Cleanup(pDevice);
-    m_TransformBuffer.Cleanup(pDevice);
+    m_pMeshData->Cleanup(pDevice);
     m_BottomLevelAS.Cleanup(pDevice);
 
     m_vecVertices.clear();
@@ -89,20 +89,13 @@ void RTXCube::Cleanup(VulkanDevice* pDevice)
 //---------------------------------------------------------------------------------------------------------------------
 void RTXCube::CreateBottomLevelAS(VulkanDevice* pDevice)
 {
-    // Create Transform matrix 
-    glm::mat4 T   = glm::translate(glm::mat4(1), m_Position);
-    glm::mat4 TR  = glm::rotate(T, m_Angle, m_RotationAxis);
-    glm::mat4 TRS = glm::scale(TR, m_Scale);
-
-    m_TransformMatrix = TRS;
-
     // 2. Create buffers for Mesh Data
     // Create VB
     pDevice->CreateBufferAndCopyData(m_vecVertices.size() * sizeof(App::VertexP),
                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     &m_VertexBuffer.buffer,
-                                     &m_VertexBuffer.memory,
+                                     &(m_pMeshData->vertexBuffer.buffer),
+                                     &(m_pMeshData->vertexBuffer.memory),
                                      m_vecVertices.data(),
                                      "BLAS_CUBE_VB");
 
@@ -110,28 +103,24 @@ void RTXCube::CreateBottomLevelAS(VulkanDevice* pDevice)
     pDevice->CreateBufferAndCopyData(m_vecIndices.size() * sizeof(uint32_t),
                                      VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                     &m_IndexBuffer.buffer,
-                                     &m_IndexBuffer.memory,
+                                     &(m_pMeshData->indexBuffer.buffer),
+                                     &(m_pMeshData->indexBuffer.memory),
                                      m_vecIndices.data(),
                                      "BLAS_CUBE_IB");
 
-    // Create TB
-    pDevice->CreateBufferAndCopyData(sizeof(glm::mat4),
-                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
-                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                    &m_TransformBuffer.buffer,
-                                    &m_TransformBuffer.memory,
-                                    glm::value_ptr(m_TransformMatrix),
-                                    "BLAS_CUBE_TB");
 
     // 3. Get Device addresses of buffers just created
     VkDeviceOrHostAddressConstKHR vbAddress = {};
     VkDeviceOrHostAddressConstKHR ibAddress = {};
     VkDeviceOrHostAddressConstKHR trAddress = {};
 
-    vbAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_VertexBuffer.buffer);
-    ibAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_IndexBuffer.buffer);
-    trAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_TransformBuffer.buffer);
+    vbAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_pMeshData->vertexBuffer.buffer);
+    ibAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_pMeshData->indexBuffer.buffer);
+    //trAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(pDevice, m_TransformBuffer.buffer);
+
+    m_pMeshInstanceData->verticesAddress  = vbAddress.deviceAddress;
+    m_pMeshInstanceData->indicesAddress = ibAddress.deviceAddress;
+  
 
     // 4. Define AS Geometry by providing vb, ib & tb addresses 
     VkAccelerationStructureGeometryKHR accelStructureGeometry = {};
@@ -153,7 +142,9 @@ void RTXCube::CreateBottomLevelAS(VulkanDevice* pDevice)
     VkAccelerationStructureBuildGeometryInfoKHR accelStructBuildGeomInfo = {};
     accelStructBuildGeomInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelStructBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    accelStructBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelStructBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | 
+                                     VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR | 
+                                     VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR;
     accelStructBuildGeomInfo.geometryCount = 1;
     accelStructBuildGeomInfo.pGeometries = &accelStructureGeometry;
 

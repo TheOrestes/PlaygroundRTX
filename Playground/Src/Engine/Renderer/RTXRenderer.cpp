@@ -28,7 +28,6 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
     VulkanRenderer::Initialize(pWindow);
 
     // Get the ray tracing & AS related function ptrs
-    vkGetBufferDeviceAddressKHR                     = reinterpret_cast<PFN_vkGetBufferDeviceAddress>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkGetBufferDeviceAddressKHR"));
     vkCreateAccelerationStructureKHR                = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkCreateAccelerationStructureKHR"));
     vkGetAccelerationStructureBuildSizesKHR         = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureBuildSizesKHR"));
     vkGetAccelerationStructureDeviceAddressKHR      = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(m_pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureDeviceAddressKHR"));
@@ -55,7 +54,7 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
 
         m_vecShaderModules.clear();
         
-        CreateTopLevelAS();
+        CreateTopLevelAS(false);
         CreateStorageImage();
         CreateRayTracingDescriptorSet();
         CreateRayTracingGraphicsPipeline();
@@ -82,7 +81,13 @@ void RTXRenderer::Update(float dt)
     m_pShaderUniformsRT->uniformData.view        = glm::inverse(Camera::getInstance().m_matView);
     m_pShaderUniformsRT->uniformData.projection  = glm::inverse(Camera::getInstance().m_matProjection);
 
+    m_pCube->Update(dt);
+
     m_pShaderUniformsRT->UpdateUniforms(m_pDevice);
+
+    CreateTopLevelAS(true);
+
+    //VkAccelerationStructureInstanceKHR& tInst = m_TopLevelAS.handle;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -295,18 +300,16 @@ void RTXRenderer::InitRayTracing()
 //---------------------------------------------------------------------------------------------------------------------
 // TLAS holds scene's object instances
 //---------------------------------------------------------------------------------------------------------------------
-void RTXRenderer::CreateTopLevelAS()
+void RTXRenderer::CreateTopLevelAS(bool bUpdate)
 { 
-    // 1. Instance Identity transform matrix
-    VkTransformMatrixKHR transformMat =
-    {
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0
-    };
+    // 1. Fetch transform matrix data
+    glm::mat4 matrix = glm::transpose(m_pCube->m_pMeshInstanceData->transformMatrix);
+    VkTransformMatrixKHR out_matrix;
+    memcpy(&out_matrix, &matrix, sizeof(VkTransformMatrixKHR));
 
+    // We have just one Cube for now!
     VkAccelerationStructureInstanceKHR accelStructInstance = {};
-    accelStructInstance.transform = transformMat;
+    accelStructInstance.transform = out_matrix;
     accelStructInstance.instanceCustomIndex = 0;
     accelStructInstance.mask = 0xFF;
     accelStructInstance.instanceShaderBindingTableRecordOffset = 0;
@@ -339,7 +342,7 @@ void RTXRenderer::CreateTopLevelAS()
     VkAccelerationStructureBuildGeometryInfoKHR accelStructBuildGeomInfo = {};
     accelStructBuildGeomInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelStructBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    accelStructBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+    accelStructBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
     accelStructBuildGeomInfo.geometryCount = 1;
     accelStructBuildGeomInfo.pGeometries = &accelStructureGeom;
 
@@ -354,19 +357,23 @@ void RTXRenderer::CreateTopLevelAS()
                                             &accelerationStructureBuildSizesInfo);
 
     // 6. Create buffer for holding AS and Create AS handle!
-    m_pDevice->CreateBuffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
-                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                            VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
-                            &m_TopLevelAS.buffer,
-                            &m_TopLevelAS.memory,
-                            "TLAS_AS");
+    if (!bUpdate)
+    {
+        m_pDevice->CreateBuffer(accelerationStructureBuildSizesInfo.accelerationStructureSize,
+                                VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                                VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
+                                &m_TopLevelAS.buffer,
+                                &m_TopLevelAS.memory,
+                                "TLAS_AS");
+
+        VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
+        accelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+        accelerationStructureCreateInfo.buffer = m_TopLevelAS.buffer;
+        accelerationStructureCreateInfo.size = accelerationStructureBuildSizesInfo.accelerationStructureSize;
+        accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        vkCreateAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, &accelerationStructureCreateInfo, nullptr, &m_TopLevelAS.handle);
+    }
     
-    VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
-    accelerationStructureCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-    accelerationStructureCreateInfo.buffer = m_TopLevelAS.buffer;
-    accelerationStructureCreateInfo.size = accelerationStructureBuildSizesInfo.accelerationStructureSize;
-    accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    vkCreateAccelerationStructureKHR(m_pDevice->m_vkLogicalDevice, &accelerationStructureCreateInfo, nullptr, &m_TopLevelAS.handle);
 
     // 7. Create a small scratch buffer used during building of the TLAS
     Vulkan::RTScratchBuffer scratchBuffer = CreateScratchBuffer(accelerationStructureBuildSizesInfo.buildScratchSize);
@@ -374,12 +381,14 @@ void RTXRenderer::CreateTopLevelAS()
     VkAccelerationStructureBuildGeometryInfoKHR accelBuildGeometryInfo2 = {};
     accelBuildGeometryInfo2.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
     accelBuildGeometryInfo2.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-    accelBuildGeometryInfo2.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-    accelBuildGeometryInfo2.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+    accelBuildGeometryInfo2.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+    accelBuildGeometryInfo2.mode = bUpdate ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     accelBuildGeometryInfo2.dstAccelerationStructure = m_TopLevelAS.handle;
     accelBuildGeometryInfo2.geometryCount = 1;
     accelBuildGeometryInfo2.pGeometries = &accelStructureGeom;
     accelBuildGeometryInfo2.scratchData.deviceAddress = scratchBuffer.deviceAddress;
+    accelBuildGeometryInfo2.srcAccelerationStructure = bUpdate ? m_TopLevelAS.handle : VK_NULL_HANDLE;
+    accelBuildGeometryInfo2.dstAccelerationStructure = m_TopLevelAS.handle;
 
     VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo = {};
     accelerationStructureBuildRangeInfo.primitiveCount = 1;
@@ -689,9 +698,7 @@ Vulkan::RTScratchBuffer RTXRenderer::CreateScratchBuffer(VkDeviceSize size)
     bufferCreateInfo.size = size;
     bufferCreateInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
-    VKRESULT_CHECK_INFO(vkCreateBuffer(m_pDevice->m_vkLogicalDevice, &bufferCreateInfo, nullptr, &scratchBuffer.handle), 
-                        "Failed to Create Raytracing Scratch buffer",
-                        "Ray Tracing Scratch buffer created!");
+    VKRESULT_CHECK(vkCreateBuffer(m_pDevice->m_vkLogicalDevice, &bufferCreateInfo, nullptr, &scratchBuffer.handle));
 
     VkMemoryRequirements memReq = {};
     vkGetBufferMemoryRequirements(m_pDevice->m_vkLogicalDevice, scratchBuffer.handle, &memReq);
