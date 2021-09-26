@@ -4,7 +4,7 @@
 #include "Engine/Renderer/VulkanDevice.h"
 #include "Engine/Renderer/VulkanSwapChain.h"
 #include "Engine/Renderer/VulkanFrameBuffer.h"
-#include "Engine/RenderObjects/Model.h"
+#include "Engine/RenderObjects/TriangleMesh.h"
 #include "PlaygroundHeaders.h"
 #include "Engine/Helpers/Log.h"
 #include "Engine/Helpers/Utility.h"
@@ -282,7 +282,7 @@ void UIManager::RenderSceneUI(Scene* pScene)
 			ImGui::PushID(i);
 			ImGui::AlignTextToFramePadding();
 
-			Model* pModel = pScene->GetModelList().at(i);
+			TriangleMesh* pMesh = pScene->GetModelList().at(i);
 
 			// Transforms
 			std::string nodeName = "Model" + std::to_string(i);
@@ -292,35 +292,25 @@ void UIManager::RenderSceneUI(Scene* pScene)
 				if(ImGui::TreeNode("Transform"))
 				{
 					//-- Position
-					glm::vec3 pos = pModel->GetPosition();
+					glm::vec3 pos = pMesh->m_pMeshInstanceData->position;
 
 					if (ImGui::SliderFloat3("Position", glm::value_ptr(pos), -100, 100))
-						pModel->SetPosition(pos);
+						pMesh->m_pMeshInstanceData->position = pos;
 
 					//-- Rotation Axis
-						glm::vec3 rot = pModel->GetRotationAxis();
+						glm::vec3 rot = pMesh->m_pMeshInstanceData->rotationAxis;
 					if (ImGui::InputFloat3("Rotation Axis", glm::value_ptr(rot)))
-						pModel->SetRotationAxis(rot);
+						pMesh->m_pMeshInstanceData->rotationAxis = rot;
 
 					//-- Rotation Angle
-					float rotAngle = pModel->GetRotationAngle();
+					float rotAngle = pMesh->m_pMeshInstanceData->angle;
 					if (ImGui::SliderAngle("Rotation Angle", &rotAngle))
-						pModel->SetRotationAngle(rotAngle);
+						pMesh->m_pMeshInstanceData->angle = rotAngle;
 
 					//-- Scale
-					glm::vec3 scale = pModel->GetScale();
+					glm::vec3 scale = pMesh->m_pMeshInstanceData->scale;
 					if (ImGui::InputFloat3("Scale", glm::value_ptr(scale)))
-						pModel->SetScale(scale);
-
-					//-- AutoUpdate
-					bool autoRotate = pModel->m_bAutoRotate;
-					if (ImGui::Checkbox("Auto Rotate", &autoRotate))
-						pModel->m_bAutoRotate = autoRotate;
-
-					//-- AutoRotate Speed
-					float autoSpeed = pModel->m_fAutoRotateSpeed;
-					if (ImGui::SliderFloat("Rotation Speed", &autoSpeed, 0.01f, 1.0f))
-						pModel->m_fAutoRotateSpeed = autoSpeed;
+						pMesh->m_pMeshInstanceData->scale = scale;
 
 					ImGui::TreePop();
 				}
@@ -328,42 +318,42 @@ void UIManager::RenderSceneUI(Scene* pScene)
 				//**** MATERIAL UI
 				if (ImGui::TreeNode("Material"))
 				{
-					ShaderData* data = &(pModel->m_pShaderUniforms->shaderData);
-
-					//-- Albedo Color
-					float albedo[4] = { data->albedoColor.r, data->albedoColor.g, data->albedoColor.b, data->albedoColor.a };
-					if(ImGui::ColorEdit4("Albedo", albedo))
-					{
-						data->albedoColor = glm::vec4(albedo[0], albedo[1], albedo[2], albedo[3]);
-					}
-
-					//-- Emission Color
-					float emission[4] = { data->emissiveColor.r, data->emissiveColor.g, data->emissiveColor.b, data->emissiveColor.a };
-					if (ImGui::ColorEdit4("Emission", emission))
-					{
-						data->emissiveColor = glm::vec4(emission[0], emission[1], emission[2], emission[3]);
-					}
-
-					//-- Roughness
-					float roughness = data->roughness;
-					if(ImGui::SliderFloat("Roughness", &roughness, 0.001f, 1.0f))
-					{
-						data->roughness = roughness;
-					}
-
-					//-- Metalness
-					float metalness = data->metalness;
-					if (ImGui::SliderFloat("Metalness", &metalness, 0.001f, 1.0f))
-					{
-						data->metalness = metalness;
-					}
-
-					//-- Occlusion
-					float occlusion = data->ao;
-					if (ImGui::SliderFloat("AmbOcclusion", &occlusion, 0.001f, 1.0f))
-					{
-						data->ao = occlusion;
-					}
+					//ShaderData* data = &(pModel->m_pShaderUniforms->shaderData);
+					//
+					////-- Albedo Color
+					//float albedo[4] = { data->albedoColor.r, data->albedoColor.g, data->albedoColor.b, data->albedoColor.a };
+					//if(ImGui::ColorEdit4("Albedo", albedo))
+					//{
+					//	data->albedoColor = glm::vec4(albedo[0], albedo[1], albedo[2], albedo[3]);
+					//}
+					//
+					////-- Emission Color
+					//float emission[4] = { data->emissiveColor.r, data->emissiveColor.g, data->emissiveColor.b, data->emissiveColor.a };
+					//if (ImGui::ColorEdit4("Emission", emission))
+					//{
+					//	data->emissiveColor = glm::vec4(emission[0], emission[1], emission[2], emission[3]);
+					//}
+					//
+					////-- Roughness
+					//float roughness = data->roughness;
+					//if(ImGui::SliderFloat("Roughness", &roughness, 0.001f, 1.0f))
+					//{
+					//	data->roughness = roughness;
+					//}
+					//
+					////-- Metalness
+					//float metalness = data->metalness;
+					//if (ImGui::SliderFloat("Metalness", &metalness, 0.001f, 1.0f))
+					//{
+					//	data->metalness = metalness;
+					//}
+					//
+					////-- Occlusion
+					//float occlusion = data->ao;
+					//if (ImGui::SliderFloat("AmbOcclusion", &occlusion, 0.001f, 1.0f))
+					//{
+					//	data->ao = occlusion;
+					//}
 					
 					ImGui::TreePop();
 				}

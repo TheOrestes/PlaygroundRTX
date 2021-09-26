@@ -9,6 +9,7 @@
 #include "Engine/RenderObjects/RTXCube.h"
 #include "Engine/Helpers/Camera.h"
 #include "Engine/ImGui/UIManager.h"
+#include "Engine/RenderObjects/TriangleMesh.h"
 
 //---------------------------------------------------------------------------------------------------------------------
 RTXRenderer::RTXRenderer()
@@ -46,8 +47,11 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
         //m_pScene = new Scene();
         //m_pScene->LoadScene(m_pDevice, m_pSwapChain);
 
-        m_pCube = new RTXCube();
-        m_pCube->Initialize(m_pDevice);
+        //m_pCube = new RTXCube();
+        //m_pCube->Initialize(m_pDevice);
+
+        m_pMesh = new TriangleMesh("Assets/Models/Sphere.fbx");
+        m_pMesh->Initialize(m_pDevice);
 
         m_pShaderUniformsRT = new RTShaderUniforms();
         m_pShaderUniformsRT->CreateBuffer(m_pDevice, m_pSwapChain);
@@ -81,11 +85,12 @@ void RTXRenderer::Update(float dt)
     m_pShaderUniformsRT->uniformData.view        = glm::inverse(Camera::getInstance().m_matView);
     m_pShaderUniformsRT->uniformData.projection  = glm::inverse(Camera::getInstance().m_matProjection);
 
-    m_pCube->Update(dt);
+    //m_pCube->Update(dt);
+    m_pMesh->Update(dt);
 
     m_pShaderUniformsRT->UpdateUniforms(m_pDevice);
 
-    CreateTopLevelAS(true);
+    //CreateTopLevelAS(true);
 
     //VkAccelerationStructureInstanceKHR& tInst = m_TopLevelAS.handle;
 }
@@ -125,7 +130,8 @@ void RTXRenderer::Cleanup()
 
     m_StorageImage.Cleanup(m_pDevice);
 
-    m_pCube->Cleanup(m_pDevice);
+    //m_pCube->Cleanup(m_pDevice);
+    m_pMesh->Cleanup(m_pDevice);
     m_TopLevelAS.Cleanup(m_pDevice);
 
     m_RaygenShaderBindingTable.Cleanup(m_pDevice);
@@ -303,7 +309,7 @@ void RTXRenderer::InitRayTracing()
 void RTXRenderer::CreateTopLevelAS(bool bUpdate)
 { 
     // 1. Fetch transform matrix data
-    glm::mat4 matrix = glm::transpose(m_pCube->m_pMeshInstanceData->transformMatrix);
+    glm::mat4 matrix = glm::transpose(m_pMesh->m_pMeshInstanceData->transformMatrix);
     VkTransformMatrixKHR out_matrix;
     memcpy(&out_matrix, &matrix, sizeof(VkTransformMatrixKHR));
 
@@ -314,7 +320,7 @@ void RTXRenderer::CreateTopLevelAS(bool bUpdate)
     accelStructInstance.mask = 0xFF;
     accelStructInstance.instanceShaderBindingTableRecordOffset = 0;
     accelStructInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-    accelStructInstance.accelerationStructureReference = m_pCube->m_BottomLevelAS.deviceAddress; //m_BottomLevelAS.deviceAddress;
+    accelStructInstance.accelerationStructureReference = m_pMesh->m_BottomLevelAS.deviceAddress; //m_BottomLevelAS.deviceAddress;
 
     // Buffer for instance data
     Vulkan::Buffer instanceBuffer;
@@ -417,7 +423,7 @@ void RTXRenderer::CreateTopLevelAS(bool bUpdate)
         vkCmdBuildAccelerationStructuresKHR(commandBuffer,
                                             static_cast<uint32_t>(vecAccelerationBuildStructureRangeInfos.size()),
                                             &accelBuildGeometryInfo2,
-                                            vecAccelerationBuildStructureRangeInfos.data()),
+                                            vecAccelerationBuildStructureRangeInfos.data());
 
         m_pDevice->EndAndSubmitCommandBuffer(commandBuffer);
     }

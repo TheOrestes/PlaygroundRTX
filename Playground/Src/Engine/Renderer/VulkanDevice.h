@@ -47,7 +47,7 @@ public:
 																VkDeviceMemory* outBufferMemory, void* data, const std::string& debugName = "");
 	
 
-	VkCommandBuffer						BeginCommandBuffer();
+	VkCommandBuffer						BeginCommandBuffer(const std::string& debugName = "");
 	void								EndAndSubmitCommandBuffer(VkCommandBuffer commandBuffer);
 	void								CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize bufferSize);
 

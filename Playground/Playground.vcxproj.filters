@@ -27,12 +27,6 @@
     <ClCompile Include="Src\Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Engine\RenderObjects\Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Engine\RenderObjects\Model.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Src\Engine\Renderer\VulkanDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,12 +78,6 @@
     <ClCompile Include="Src\Engine\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Engine\RenderObjects\DummySkybox.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Engine\RenderObjects\HDRISkydome.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Src\Engine\Renderer\VulkanRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -100,6 +88,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Src\Engine\RenderObjects\RTXCube.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Engine\RenderObjects\TriangleMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -120,12 +111,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\Engine\Renderer\VulkanRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Engine\RenderObjects\Mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Engine\RenderObjects\Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\Engine\Helpers\Utility.h">
@@ -185,12 +170,6 @@
     <ClInclude Include="Src\Engine\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Src\Engine\RenderObjects\DummySkybox.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Src\Engine\RenderObjects\HDRISkydome.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Src\Engine\Helpers\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -198,6 +177,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Src\Engine\RenderObjects\RTXCube.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\Engine\RenderObjects\TriangleMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

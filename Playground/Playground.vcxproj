@@ -15,16 +15,12 @@
     <ClCompile Include="Src\Engine\Helpers\Camera.cpp" />
     <ClCompile Include="Src\Engine\Renderer\RTXRenderer.cpp" />
     <ClCompile Include="Src\Engine\Renderer\VulkanRenderer.cpp" />
-    <ClCompile Include="Src\Engine\RenderObjects\HDRISkydome.cpp" />
-    <ClCompile Include="Src\Engine\RenderObjects\DummySkybox.cpp" />
     <ClCompile Include="Src\Engine\Scene.cpp" />
     <ClCompile Include="Src\Engine\Helpers\FreeCamera.cpp" />
     <ClCompile Include="Src\Application.cpp" />
     <ClCompile Include="Src\Engine\Helpers\Log.cpp" />
     <ClCompile Include="Src\Engine\ImGui\imgui_impl_glfw.cpp" />
     <ClCompile Include="Src\Engine\ImGui\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="Src\Engine\RenderObjects\Mesh.cpp" />
-    <ClCompile Include="Src\Engine\RenderObjects\Model.cpp" />
     <ClCompile Include="Src\Main.cpp" />
     <ClCompile Include="Src\PlaygroundPCH.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -45,13 +41,12 @@
     <ClCompile Include="Src\Engine\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Src\Engine\ImGui\UIManager.cpp" />
     <ClCompile Include="Src\Engine\Renderer\VulkanFrameBuffer.cpp" />
+    <ClCompile Include="Src\Engine\RenderObjects\TriangleMesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Src\Engine\RenderObjects\RTXCube.h" />
     <ClInclude Include="Src\Engine\Helpers\Camera.h" />
     <ClInclude Include="Src\Engine\Renderer\RTXRenderer.h" />
-    <ClInclude Include="Src\Engine\RenderObjects\HDRISkydome.h" />
-    <ClInclude Include="Src\Engine\RenderObjects\DummySkybox.h" />
     <ClInclude Include="Src\Engine\Scene.h" />
     <ClInclude Include="Src\Engine\Helpers\FreeCamera.h" />
     <ClInclude Include="Src\Application.h" />
@@ -67,8 +62,6 @@
     <ClInclude Include="Src\Engine\ImGui\imstb_truetype.h" />
     <ClInclude Include="Src\Engine\Renderer\IRenderer.h" />
     <ClInclude Include="Src\Engine\Renderer\VulkanRenderer.h" />
-    <ClInclude Include="Src\Engine\RenderObjects\Mesh.h" />
-    <ClInclude Include="Src\Engine\RenderObjects\Model.h" />
     <ClInclude Include="Src\PlaygroundHeaders.h" />
     <ClInclude Include="Src\PlaygroundPCH.h" />
     <ClInclude Include="Src\Engine\Renderer\VulkanDevice.h" />
@@ -79,6 +72,7 @@
     <ClInclude Include="Src\Engine\Renderer\VulkanMaterial.h" />
     <ClInclude Include="Src\Engine\ImGui\UIManager.h" />
     <ClInclude Include="Src\Engine\Renderer\VulkanFrameBuffer.h" />
+    <ClInclude Include="Src\Engine\RenderObjects\TriangleMesh.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\BrdfLUT.frag" />

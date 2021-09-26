@@ -434,7 +434,7 @@ void VulkanDevice::CreateBufferAndCopyData(VkDeviceSize bufferSize, VkBufferUsag
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //--- Begin Command buffer for recording commands! 
-VkCommandBuffer VulkanDevice::BeginCommandBuffer()
+VkCommandBuffer VulkanDevice::BeginCommandBuffer(const std::string& debugName)
 {
 	// Command buffer to hold transfer command
 	VkCommandBuffer commandBuffer;
@@ -448,6 +448,8 @@ VkCommandBuffer VulkanDevice::BeginCommandBuffer()
 
 	// Allocate command buffer from pool
 	vkAllocateCommandBuffers(m_vkLogicalDevice, &allocInfo, &commandBuffer);
+
+	Vulkan::SetDebugUtilsObjectName(m_vkLogicalDevice, VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<uint64_t>(commandBuffer), (debugName + "_commandBuffer"));
 
 	// Information to begin the command buffer record!
 	VkCommandBufferBeginInfo beginInfo = {};
@@ -474,10 +476,16 @@ void VulkanDevice::EndAndSubmitCommandBuffer(VkCommandBuffer commandBuffer)
 	submitInfo.pCommandBuffers = &commandBuffer;
 
 	// Submit transfer command to transfer queue (which is same as Graphics Queue) & wait until it finishes!
-	vkQueueSubmit(m_vkQueueGraphics, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(m_vkQueueGraphics);
+	VkResult result = vkQueueSubmit(m_vkQueueGraphics, 1, &submitInfo, VK_NULL_HANDLE);
+	result = vkQueueWaitIdle(m_vkQueueGraphics);
 
 	// Free temporary command buffer back to pool!
+	if (result != VK_SUCCESS)
+	{
+		LOG_ERROR(__FILE__, __LINE__);
+		exit(-1);
+	}
+	
 	vkFreeCommandBuffers(m_vkLogicalDevice, m_vkCommandPoolGraphics, 1, &commandBuffer);
 }
 

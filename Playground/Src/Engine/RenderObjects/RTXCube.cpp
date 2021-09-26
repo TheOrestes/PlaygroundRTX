@@ -216,7 +216,7 @@ void RTXCube::CreateBottomLevelAS(VulkanDevice* pDevice)
     vkCmdBuildAccelerationStructuresKHR(commandBuffer,
                                         static_cast<uint32_t>(vecAccelStructRangeInfos.size()),
                                         &accelStructBuildGeomInfo2,
-                                        vecAccelStructRangeInfos.data()),
+                                        vecAccelStructRangeInfos.data());
 
     pDevice->EndAndSubmitCommandBuffer(commandBuffer);
 
