@@ -18,11 +18,7 @@ RTXCube::~RTXCube()
 //---------------------------------------------------------------------------------------------------------------------
 void RTXCube::Initialize(VulkanDevice* pDevice)
 {
-    // Get the ray tracing & AS related function ptrs
-    vkCreateAccelerationStructureKHR            = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkCreateAccelerationStructureKHR"));
-    vkGetAccelerationStructureBuildSizesKHR     = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureBuildSizesKHR"));
-    vkGetAccelerationStructureDeviceAddressKHR  = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureDeviceAddressKHR"));
-    vkCmdBuildAccelerationStructuresKHR         = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkCmdBuildAccelerationStructuresKHR"));
+    SceneObject::Initialize(pDevice);
 
     // Vertex data
     m_vecVertices.reserve(8);
@@ -55,10 +51,6 @@ void RTXCube::Initialize(VulkanDevice* pDevice)
     m_vecIndices[30] = 1;        m_vecIndices[31] = 5;        m_vecIndices[32] = 6;
     m_vecIndices[33] = 6;        m_vecIndices[34] = 2;        m_vecIndices[35] = 1;
 
-    // Set defaults
-   m_pMeshData = new Vulkan::MeshData();
-   m_pMeshInstanceData = new Vulkan::MeshInstance();
-   
    CreateBottomLevelAS(pDevice);
 }
 
@@ -89,6 +81,8 @@ void RTXCube::Cleanup(VulkanDevice* pDevice)
 //---------------------------------------------------------------------------------------------------------------------
 void RTXCube::CreateBottomLevelAS(VulkanDevice* pDevice)
 {
+    m_pMeshData = new Vulkan::MeshData();
+
     // 2. Create buffers for Mesh Data
     // Create VB
     pDevice->CreateBufferAndCopyData(m_vecVertices.size() * sizeof(App::VertexP),

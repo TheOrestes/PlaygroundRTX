@@ -3,14 +3,12 @@
 #include "TriangleMesh.h"
 
 //---------------------------------------------------------------------------------------------------------------------
-TriangleMesh::TriangleMesh(const std::string filepath)
+TriangleMesh::TriangleMesh(const std::string& filepath)
 {
-	m_TriangleCount = 0;
+    m_FilePath = filepath;
 
     m_vecVertices.clear();
     m_vecIndices.clear();
-
-    m_Filepath = filepath;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -19,26 +17,18 @@ TriangleMesh::~TriangleMesh()
 }
 
 //---------------------------------------------------------------------------------------------------------------------
-void TriangleMesh::Initialize(VulkanDevice* pDevice)
+void TriangleMesh::Initialize(VulkanDevice* pDevice)  
 {
-    // Get the ray tracing & AS related function ptrs
-    vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkCreateAccelerationStructureKHR"));
-    vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureBuildSizesKHR"));
-    vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkGetAccelerationStructureDeviceAddressKHR"));
-    vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(pDevice->m_vkLogicalDevice, "vkCmdBuildAccelerationStructuresKHR"));    
+    SceneObject::Initialize(pDevice);
 
-    LoadModel(m_Filepath);
-
+    LoadModel(m_FilePath);
 	CreateBottomLevelAS(pDevice);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void TriangleMesh::Update(float dt)
 {
-    static float angle = 0.0f;
-    angle += dt;
-
-    m_pMeshInstanceData->Update(dt);
+    SceneObject::Update(dt);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -214,6 +204,7 @@ void TriangleMesh::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	//	}
 	//}
 
+    // Gets called per triangle primitive!
 	for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 	{
 		// Get a face
@@ -224,24 +215,13 @@ void TriangleMesh::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		{
 			m_vecIndices.push_back(face.mIndices[j]);
 		}
-
-		// Update the triangle count!
-		++m_TriangleCount;
 	}
-
-	//AABB box;
-	//for (unsigned int i = 0; i < m_vecTriangles.size(); i++)
-	//{
-	//	m_vecTriangles[i]->BoundingBox(box);
-	//	m_ptrAABB->ExpandBoundingBox(box);
-	//}
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void TriangleMesh::CreateBottomLevelAS(VulkanDevice* pDevice)
 {	  
 	m_pMeshData = new Vulkan::MeshData();
-	m_pMeshInstanceData = new Vulkan::MeshInstance();
 
     // 2. Create buffers for Mesh Data
     // Create VB

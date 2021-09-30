@@ -277,12 +277,12 @@ void UIManager::RenderSceneUI(Scene* pScene)
 	if(ImGui::CollapsingHeader("Scene Objects"))
 	{
 		// All 3D Models!
-		for (uint32_t i = 0 ; i < pScene->GetModelList().size() ; ++i)
+		for (uint32_t i = 0 ; i < pScene->m_vecSceneObjects.size() ; ++i)
 		{
 			ImGui::PushID(i);
 			ImGui::AlignTextToFramePadding();
 
-			TriangleMesh* pMesh = pScene->GetModelList().at(i);
+			TriangleMesh* pMesh = static_cast<TriangleMesh*>(pScene->m_vecSceneObjects.at(i));
 
 			// Transforms
 			std::string nodeName = "Model" + std::to_string(i);
@@ -292,25 +292,25 @@ void UIManager::RenderSceneUI(Scene* pScene)
 				if(ImGui::TreeNode("Transform"))
 				{
 					//-- Position
-					glm::vec3 pos = pMesh->m_pMeshInstanceData->position;
-
-					if (ImGui::SliderFloat3("Position", glm::value_ptr(pos), -100, 100))
-						pMesh->m_pMeshInstanceData->position = pos;
-
-					//-- Rotation Axis
-						glm::vec3 rot = pMesh->m_pMeshInstanceData->rotationAxis;
-					if (ImGui::InputFloat3("Rotation Axis", glm::value_ptr(rot)))
-						pMesh->m_pMeshInstanceData->rotationAxis = rot;
-
-					//-- Rotation Angle
-					float rotAngle = pMesh->m_pMeshInstanceData->angle;
-					if (ImGui::SliderAngle("Rotation Angle", &rotAngle))
-						pMesh->m_pMeshInstanceData->angle = rotAngle;
-
-					//-- Scale
-					glm::vec3 scale = pMesh->m_pMeshInstanceData->scale;
-					if (ImGui::InputFloat3("Scale", glm::value_ptr(scale)))
-						pMesh->m_pMeshInstanceData->scale = scale;
+					//glm::vec3 pos = pMesh->m_pMeshInstanceData->position;
+					//
+					//if (ImGui::SliderFloat3("Position", glm::value_ptr(pos), -100, 100))
+					//	pMesh->m_pMeshInstanceData->position = pos;
+					//
+					////-- Rotation Axis
+					//	glm::vec3 rot = pMesh->m_pMeshInstanceData->rotationAxis;
+					//if (ImGui::InputFloat3("Rotation Axis", glm::value_ptr(rot)))
+					//	pMesh->m_pMeshInstanceData->rotationAxis = rot;
+					//
+					////-- Rotation Angle
+					//float rotAngle = pMesh->m_pMeshInstanceData->angle;
+					//if (ImGui::SliderAngle("Rotation Angle", &rotAngle))
+					//	pMesh->m_pMeshInstanceData->angle = rotAngle;
+					//
+					////-- Scale
+					//glm::vec3 scale = pMesh->m_pMeshInstanceData->scale;
+					//if (ImGui::InputFloat3("Scale", glm::value_ptr(scale)))
+					//	pMesh->m_pMeshInstanceData->scale = scale;
 
 					ImGui::TreePop();
 				}
@@ -368,11 +368,11 @@ void UIManager::RenderSceneUI(Scene* pScene)
 	//**** Light UI
 	if (ImGui::CollapsingHeader("Sun Light Properties"))
 	{
-		glm::vec3 angleXYZ = pScene->GetLightEulerAngles();
-		if (ImGui::DragFloat3("Rotation", glm::value_ptr(angleXYZ), 1, -180, 180, "%0.1f"))
-		{
-			pScene->SetLightDirection(angleXYZ);
-		}
+		//glm::vec3 angleXYZ = pScene->GetLightEulerAngles();
+		//if (ImGui::DragFloat3("Rotation", glm::value_ptr(angleXYZ), 1, -180, 180, "%0.1f"))
+		//{
+		//	pScene->SetLightDirection(angleXYZ);
+		//}
 
 		float intensity = pScene->m_LightIntensity;
 		if (ImGui::SliderFloat("Intensity", &intensity, 0.01f, 10.0f))

@@ -13,6 +13,7 @@ class VulkanSwapChain;
 class VulkanFrameBuffer;
 class VulkanGraphicsPipeline;
 class Scene;
+class SceneObject;
 class RTXCube;
 class TriangleMesh;
 
@@ -95,8 +96,10 @@ private:
 
 private:
    
-    RTXCube*                                            m_pCube;
-    TriangleMesh*                                       m_pMesh;
+    //RTXCube*                                            m_pCube;
+    //TriangleMesh*                                       m_pMesh;
+
+    Scene*                                              m_pScene;
 
     // RayGen shader binding table
     Vulkan::Buffer                                      m_RaygenShaderBindingTable;

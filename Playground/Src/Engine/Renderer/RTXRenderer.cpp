@@ -10,17 +10,18 @@
 #include "Engine/Helpers/Camera.h"
 #include "Engine/ImGui/UIManager.h"
 #include "Engine/RenderObjects/TriangleMesh.h"
+#include "Engine/RenderObjects/SceneObject.h"
 
 //---------------------------------------------------------------------------------------------------------------------
 RTXRenderer::RTXRenderer()
 {
-    //m_pScene = nullptr;
+    m_pScene = nullptr;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 RTXRenderer::~RTXRenderer()
 {
-    //SAFE_DELETE(m_pScene);
+    SAFE_DELETE(m_pScene);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -44,14 +45,14 @@ int RTXRenderer::Initialize(GLFWwindow* pWindow)
         //SetupRenderPass();
         InitRayTracing();
 
-        //m_pScene = new Scene();
-        //m_pScene->LoadScene(m_pDevice, m_pSwapChain);
+        m_pScene = new Scene();
+        m_pScene->LoadScene(m_pDevice, m_pSwapChain);
 
         //m_pCube = new RTXCube();
         //m_pCube->Initialize(m_pDevice);
 
-        m_pMesh = new TriangleMesh("Assets/Models/Sphere.fbx");
-        m_pMesh->Initialize(m_pDevice);
+        //m_pMesh = new TriangleMesh("Assets/Models/SteamPunk.fbx");
+        //m_pMesh->Initialize(m_pDevice);
 
         m_pShaderUniformsRT = new RTShaderUniforms();
         m_pShaderUniformsRT->CreateBuffer(m_pDevice, m_pSwapChain);
@@ -86,11 +87,12 @@ void RTXRenderer::Update(float dt)
     m_pShaderUniformsRT->uniformData.projection  = glm::inverse(Camera::getInstance().m_matProjection);
 
     //m_pCube->Update(dt);
-    m_pMesh->Update(dt);
+    //m_pMesh->Update(dt);
 
+    m_pScene->Update(m_pDevice, m_pSwapChain, dt);
     m_pShaderUniformsRT->UpdateUniforms(m_pDevice);
 
-    //CreateTopLevelAS(true);
+    CreateTopLevelAS(true);
 
     //VkAccelerationStructureInstanceKHR& tInst = m_TopLevelAS.handle;
 }
@@ -131,7 +133,8 @@ void RTXRenderer::Cleanup()
     m_StorageImage.Cleanup(m_pDevice);
 
     //m_pCube->Cleanup(m_pDevice);
-    m_pMesh->Cleanup(m_pDevice);
+    //m_pMesh->Cleanup(m_pDevice);
+    m_pScene->Cleanup(m_pDevice);
     m_TopLevelAS.Cleanup(m_pDevice);
 
     m_RaygenShaderBindingTable.Cleanup(m_pDevice);
@@ -309,40 +312,111 @@ void RTXRenderer::InitRayTracing()
 void RTXRenderer::CreateTopLevelAS(bool bUpdate)
 { 
     // 1. Fetch transform matrix data
-    glm::mat4 matrix = glm::transpose(m_pMesh->m_pMeshInstanceData->transformMatrix);
-    VkTransformMatrixKHR out_matrix;
-    memcpy(&out_matrix, &matrix, sizeof(VkTransformMatrixKHR));
+    // glm::mat4 matrix1 = glm::transpose(m_pScene->m_vecSceneObjects[0]->m_pMeshInstanceData->transformMatrix);
+    // VkTransformMatrixKHR out_matrix1;
+    // memcpy(&out_matrix1, &matrix1, sizeof(VkTransformMatrixKHR));
+    // 
+    // glm::mat4 matrix2 = glm::transpose(m_pScene->m_vecSceneObjects[1]->m_pMeshInstanceData->transformMatrix);
+    // VkTransformMatrixKHR out_matrix2;
+    // memcpy(&out_matrix2, &matrix2, sizeof(VkTransformMatrixKHR));
 
-    // We have just one Cube for now!
-    VkAccelerationStructureInstanceKHR accelStructInstance = {};
-    accelStructInstance.transform = out_matrix;
-    accelStructInstance.instanceCustomIndex = 0;
-    accelStructInstance.mask = 0xFF;
-    accelStructInstance.instanceShaderBindingTableRecordOffset = 0;
-    accelStructInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-    accelStructInstance.accelerationStructureReference = m_pMesh->m_BottomLevelAS.deviceAddress; //m_BottomLevelAS.deviceAddress;
+    std::vector<VkTransformMatrixKHR>               instMatrices(m_pScene->m_vecSceneObjects.size());
+    std::vector<VkAccelerationStructureInstanceKHR> instAccelStruct(m_pScene->m_vecSceneObjects.size());
 
-    // Buffer for instance data
-    Vulkan::Buffer instanceBuffer;
+    for (uint32_t i = 0; i < m_pScene->m_vecSceneObjects.size(); i++)
+    {
+        // 1. Fetch transform matrix data
+        glm::mat4 matrix = glm::transpose(m_pScene->m_vecSceneObjects[i]->m_pMeshInstanceData->transformMatrix);
+        memcpy(&instMatrices[i], &matrix, sizeof(VkTransformMatrixKHR));
+
+        VkAccelerationStructureInstanceKHR accelStructInstance = {};
+        accelStructInstance.transform = instMatrices[i];
+        accelStructInstance.instanceCustomIndex = i;
+        accelStructInstance.mask = 0xFF;
+        accelStructInstance.instanceShaderBindingTableRecordOffset = 0;
+        accelStructInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+        accelStructInstance.accelerationStructureReference = m_pScene->m_vecSceneObjects[i]->m_BottomLevelAS.deviceAddress;
+
+        instAccelStruct[i] = accelStructInstance;
+    }
 
     // 2. Create buffer for Instance data!
-    m_pDevice->CreateBufferAndCopyData(sizeof(VkAccelerationStructureInstanceKHR),
+    
+    // Create a buffer holding the actual instance data for use by the AS builder!
+    VkDeviceSize instanceDescSizeInBytes = m_pScene->m_vecSceneObjects.size() * sizeof(VkAccelerationStructureInstanceKHR);
+
+    Vulkan::Buffer instanceBuffer;
+    m_pDevice->CreateBufferAndCopyData(instanceDescSizeInBytes,
                                        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
                                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                                       &instanceBuffer.buffer, &instanceBuffer.memory, &accelStructInstance, "TLAS_Instance");
+                                       &instanceBuffer.buffer, &instanceBuffer.memory, instAccelStruct.data(), "TLAS_Instances");
 
     // 3. Get Device address of Buffer just created!
     VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress = {};
     instanceDataDeviceAddress.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, instanceBuffer.buffer);
+    
+
+    // We have just one Cube for now!
+    //VkAccelerationStructureInstanceKHR accelStructInstance1 = {};
+    //accelStructInstance1.transform = out_matrix1;
+    //accelStructInstance1.instanceCustomIndex = 0;
+    //accelStructInstance1.mask = 0xFF;
+    //accelStructInstance1.instanceShaderBindingTableRecordOffset = 0;
+    //accelStructInstance1.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+    //accelStructInstance1.accelerationStructureReference = m_pScene->m_vecSceneObjects[0]->m_BottomLevelAS.deviceAddress; 
+    //
+    //VkAccelerationStructureInstanceKHR accelStructInstance2 = {};
+    //accelStructInstance2.transform = out_matrix2;
+    //accelStructInstance2.instanceCustomIndex = 0;
+    //accelStructInstance2.mask = 0xFF;
+    //accelStructInstance2.instanceShaderBindingTableRecordOffset = 0;
+    //accelStructInstance2.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+    //accelStructInstance2.accelerationStructureReference = m_pScene->m_vecSceneObjects[1]->m_BottomLevelAS.deviceAddress;
+
+    // Buffer for instance data
+    // Vulkan::Buffer instanceBuffer1;
+    // Vulkan::Buffer instanceBuffer2;
+    // 
+    // // 2. Create buffer for Instance data!
+    // m_pDevice->CreateBufferAndCopyData(sizeof(VkAccelerationStructureInstanceKHR),
+    //                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+    //                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    //                                    &instanceBuffer1.buffer, &instanceBuffer1.memory, &accelStructInstance1, "TLAS_Instance1");
+    // 
+    // m_pDevice->CreateBufferAndCopyData(sizeof(VkAccelerationStructureInstanceKHR),
+    //                                    VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+    //                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+    //                                    &instanceBuffer2.buffer, &instanceBuffer2.memory, &accelStructInstance2, "TLAS_Instance2");
+
+    // 3. Get Device address of Buffer just created!
+    // VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress1 = {};
+    // instanceDataDeviceAddress1.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, instanceBuffer1.buffer);
+    // 
+    // VkDeviceOrHostAddressConstKHR instanceDataDeviceAddress2 = {};
+    // instanceDataDeviceAddress2.deviceAddress = Vulkan::GetBufferDeviceAddress(m_pDevice, instanceBuffer2.buffer);
 
     // 4. Define AS data by providing buffer's device address
-    VkAccelerationStructureGeometryKHR accelStructureGeom = {};
-    accelStructureGeom.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-    accelStructureGeom.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-    accelStructureGeom.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-    accelStructureGeom.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-    accelStructureGeom.geometry.instances.arrayOfPointers = VK_FALSE;
-    accelStructureGeom.geometry.instances.data = instanceDataDeviceAddress;
+    VkAccelerationStructureGeometryKHR topASGeometry = {};
+    topASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    topASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    topASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    topASGeometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+    topASGeometry.geometry.instances.arrayOfPointers = VK_FALSE;
+    topASGeometry.geometry.instances.data = instanceDataDeviceAddress;
+
+    // VkAccelerationStructureGeometryKHR accelStructureGeom2 = {};
+    // accelStructureGeom2.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+    // accelStructureGeom2.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+    // accelStructureGeom2.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+    // accelStructureGeom2.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+    // accelStructureGeom2.geometry.instances.arrayOfPointers = VK_FALSE;
+    // accelStructureGeom2.geometry.instances.data = instanceDataDeviceAddress2;
+
+    // std::array<VkAccelerationStructureGeometryKHR, 2> arrAccelStructGeoms = 
+    // {
+    //     accelStructureGeom1,
+    //     accelStructureGeom2
+    // };
 
     // 5. Get AS build size estimate
     VkAccelerationStructureBuildGeometryInfoKHR accelStructBuildGeomInfo = {};
@@ -350,9 +424,9 @@ void RTXRenderer::CreateTopLevelAS(bool bUpdate)
     accelStructBuildGeomInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
     accelStructBuildGeomInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
     accelStructBuildGeomInfo.geometryCount = 1;
-    accelStructBuildGeomInfo.pGeometries = &accelStructureGeom;
+    accelStructBuildGeomInfo.pGeometries = &topASGeometry;
 
-    uint32_t primitiveCount = 1;
+    uint32_t primitiveCount = m_pScene->m_vecSceneObjects.size();
 
     VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{};
     accelerationStructureBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
@@ -391,13 +465,13 @@ void RTXRenderer::CreateTopLevelAS(bool bUpdate)
     accelBuildGeometryInfo2.mode = bUpdate ? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
     accelBuildGeometryInfo2.dstAccelerationStructure = m_TopLevelAS.handle;
     accelBuildGeometryInfo2.geometryCount = 1;
-    accelBuildGeometryInfo2.pGeometries = &accelStructureGeom;
+    accelBuildGeometryInfo2.pGeometries = &topASGeometry;
     accelBuildGeometryInfo2.scratchData.deviceAddress = scratchBuffer.deviceAddress;
     accelBuildGeometryInfo2.srcAccelerationStructure = bUpdate ? m_TopLevelAS.handle : VK_NULL_HANDLE;
     accelBuildGeometryInfo2.dstAccelerationStructure = m_TopLevelAS.handle;
 
     VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo = {};
-    accelerationStructureBuildRangeInfo.primitiveCount = 1;
+    accelerationStructureBuildRangeInfo.primitiveCount = static_cast<uint32_t>(m_pScene->m_vecSceneObjects.size());
     accelerationStructureBuildRangeInfo.primitiveOffset = 0;
     accelerationStructureBuildRangeInfo.firstVertex = 0;
     accelerationStructureBuildRangeInfo.transformOffset = 0;

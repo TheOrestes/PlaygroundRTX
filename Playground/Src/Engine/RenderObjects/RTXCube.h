@@ -1,25 +1,20 @@
 #pragma once
 #include "Engine/Helpers/Utility.h"
+#include "SceneObject.h"
 
-class RTXCube
+class RTXCube : public SceneObject
 {
 public:
     RTXCube();
     ~RTXCube();
 
 public:
-    void                                            Initialize(VulkanDevice* pDevice);
-    void                                            Update(float dt);
-    void                                            Render();
-    void                                            Cleanup(VulkanDevice* pDevice);
+    void                                            Initialize(VulkanDevice* pDevice) override;
+    void                                            Update(float dt) override;
+    void                                            Render() override;
+    void                                            Cleanup(VulkanDevice* pDevice) override;
 
-private:
-
-    PFN_vkCreateAccelerationStructureKHR            vkCreateAccelerationStructureKHR;
-    PFN_vkCmdBuildAccelerationStructuresKHR         vkCmdBuildAccelerationStructuresKHR;
-    PFN_vkGetAccelerationStructureDeviceAddressKHR  vkGetAccelerationStructureDeviceAddressKHR;
-    PFN_vkGetAccelerationStructureBuildSizesKHR     vkGetAccelerationStructureBuildSizesKHR;
-    
+private:    
     void                                            CreateBottomLevelAS(VulkanDevice* pDevice);
 
 private:
@@ -28,8 +23,4 @@ private:
     // Actual Data
     std::vector<App::VertexP>                       m_vecVertices;
     std::vector<uint32_t>                           m_vecIndices;
-
-public:
-    Vulkan::RTAccelerationStructure                 m_BottomLevelAS;
-    Vulkan::MeshInstance*                           m_pMeshInstanceData;
 };

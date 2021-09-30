@@ -5,7 +5,7 @@
 class VulkanDevice;
 class VulkanSwapChain;
 class VulkanGraphicsPipeline;
-class TriangleMesh;
+class SceneObject;
 
 class Scene
 {
@@ -20,11 +20,6 @@ public:
 	void								UpdateUniforms(VulkanDevice* pDevice, uint32_t imageIndex);
 	void								RenderOpaque(VulkanDevice* pDevice, VulkanGraphicsPipeline* pPipline, uint32_t imageIndex);
 
-	void								SetLightDirection(const glm::vec3& eulerAngles);
-	
-	inline glm::vec3					GetLightEulerAngles()	{ return m_LightAngleEuler; }
-	inline std::vector<TriangleMesh*>	GetModelList()			{ return m_vecMeshes; }
-
 public:
 	glm::vec3							m_LightDirection;
 	float								m_LightIntensity;
@@ -32,8 +27,8 @@ public:
 private:								
 	void								LoadModels(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain);
 										
-private:								
+public:								
 	glm::vec3							m_LightAngleEuler;
-	std::vector<TriangleMesh*>			m_vecMeshes;
+	std::vector<SceneObject*>			m_vecSceneObjects;
 };
 
