@@ -37,13 +37,31 @@ void Scene::LoadScene(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain)
 //---------------------------------------------------------------------------------------------------------------------
 void Scene::LoadModels(VulkanDevice* pDevice, VulkanSwapChain* pSwapchain)
 {
-	TriangleMesh* pMesh = new TriangleMesh("Assets/Models/SteamPunk.fbx");
-	pMesh->Initialize(pDevice);
+	TriangleMesh* pMeshPunk = new TriangleMesh("Assets/Models/SteamPunk.fbx");
+	pMeshPunk->Initialize(pDevice);
+	pMeshPunk->SetPosition(glm::vec3(-1,0,0));
+	pMeshPunk->SetScale(glm::vec3(0.25f));
+	pMeshPunk->SetUpdate(true);
+
+	TriangleMesh* pMeshBarb = new TriangleMesh("Assets/Models/barb1.fbx");
+	pMeshBarb->Initialize(pDevice);
+	pMeshBarb->SetPosition(glm::vec3(0, 0, 0));
+	pMeshBarb->SetScale(glm::vec3(0.5f));
+
+	TriangleMesh* pMeshPlane = new TriangleMesh("Assets/Models/Plane_Oak.fbx");
+	pMeshPlane->Initialize(pDevice);
+	pMeshPlane->SetPosition(glm::vec3(0, 0, 0));
+	pMeshPlane->SetScale(glm::vec3(1.5f));
 
 	RTXCube* pCube = new RTXCube();
 	pCube->Initialize(pDevice);
+	pCube->SetPosition(glm::vec3(3,0,0));
+	pCube->SetScale(glm::vec3(0.5));
+	pCube->SetUpdate(true);
 
-	m_vecSceneObjects.push_back(pMesh);
+	m_vecSceneObjects.push_back(pMeshPunk);
+	m_vecSceneObjects.push_back(pMeshBarb);
+	m_vecSceneObjects.push_back(pMeshPlane);
 	m_vecSceneObjects.push_back(pCube);
 }
 

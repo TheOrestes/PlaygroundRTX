@@ -5,6 +5,7 @@
 //---------------------------------------------------------------------------------------------------------------------
 SceneObject::SceneObject()
 {
+    m_bUpdate = false;
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -27,7 +28,10 @@ void SceneObject::Initialize(VulkanDevice* pDevice)
 //---------------------------------------------------------------------------------------------------------------------
 void SceneObject::Update(float dt)
 {
-    m_pMeshInstanceData->Update(dt);
+    if (m_bUpdate)
+    {
+        m_pMeshInstanceData->Update(dt);
+    }
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -38,5 +42,29 @@ void SceneObject::Render()
 //---------------------------------------------------------------------------------------------------------------------
 void SceneObject::Cleanup(VulkanDevice* pDevice)
 {
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void SceneObject::SetPosition(const glm::vec3& pos)
+{
+    m_pMeshInstanceData->position = pos;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void SceneObject::SetScale(const glm::vec3& sc)
+{
+    m_pMeshInstanceData->scale = sc;
+}
+
+//---------------------------------------------------------------------------------------------------------------------
+void SceneObject::SetRotation(const glm::vec3& axis, float angle)
+{
+    m_pMeshInstanceData->rotationAxis = axis;
+    m_pMeshInstanceData->angle = angle;
+}
+
+void SceneObject::SetUpdate(bool flag)
+{
+    m_bUpdate = flag;
 }
 
