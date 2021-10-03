@@ -48,12 +48,14 @@ void SceneObject::Cleanup(VulkanDevice* pDevice)
 void SceneObject::SetPosition(const glm::vec3& pos)
 {
     m_pMeshInstanceData->position = pos;
+    m_pMeshInstanceData->Update(0.0f);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
 void SceneObject::SetScale(const glm::vec3& sc)
 {
     m_pMeshInstanceData->scale = sc;
+    m_pMeshInstanceData->Update(0.0f);
 }
 
 //---------------------------------------------------------------------------------------------------------------------
@@ -61,6 +63,7 @@ void SceneObject::SetRotation(const glm::vec3& axis, float angle)
 {
     m_pMeshInstanceData->rotationAxis = axis;
     m_pMeshInstanceData->angle = angle;
+    m_pMeshInstanceData->Update(0.0f);
 }
 
 void SceneObject::SetUpdate(bool flag)
